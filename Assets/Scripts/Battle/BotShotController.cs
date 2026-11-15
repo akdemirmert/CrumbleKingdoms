@@ -25,7 +25,7 @@ public class BotShotController : MonoBehaviour {
         WeaponDef def = f.Weapon(slot);
 
         // The perfect throw (allowing for part of the wind).
-        Vector3 aim = target.CommanderAlive ? target.commander.AimPoint : target.TopPoint;
+        Vector3 aim = AimPoint(f, def, target);
         Vector3 origin = f.LaunchOrigin;
         bool high = def.arc == ArcPreference.High || (def.arc == ArcPreference.Any && UnityEngine.Random.value < 0.5f);
         Ballistics.Solve(origin, aim, def, BattleManager.Wind * ai.windSense, high, out Vector3 perfect, f.launchSpeedScale);
@@ -77,9 +77,23 @@ public class BotShotController : MonoBehaviour {
     static int ChooseSlot(Fortress f) {
         if (GameSession.ForcedSlot >= 0 && f.IsReady(GameSession.ForcedSlot)) return GameSession.ForcedSlot;
         List<int> ready = new List<int>();
-        for (int i = 0; i < 4; i++) if (f.IsReady(i)) ready.Add(i);
+        for (int i = 0; i < 4; i++) if (f.IsReady(i) && Worthwhile(f, i)) ready.Add(i);
         if (ready.Count == 0) return 0;
         return UnityEngine.Random.value < 0.5f ? ready[ready.Count - 1] : ready[UnityEngine.Random.Range(0, ready.Count)];
+    }
+
+    // A summon that is still on the battlefield would only be replaced: not worth a turn.
+    static bool Worthwhile(Fortress f, int slot) {
+        return f.Weapon(slot).id != WeaponId.BoneDragon || BoneDragon.Of(f) == null;
+    }
+
+    // Where to throw: the enemy commander, except where a weapon wants something else (the skeletons are thrown in
+    // front of the wall).
+    static Vector3 AimPoint(Fortress f, WeaponDef def, Fortress target) {
+        if (def.id == WeaponId.SkeletonLegion) return Tombstone.BotAim(f, target);
+        if (def.id == WeaponId.GargoyleDive && target.CommanderAlive)   // over him, above the roof: it wakes there and dives
+            return new Vector3(target.commander.AimPoint.x, target.TopPoint.y + 3f, 0f);
+        return target.CommanderAlive ? target.commander.AimPoint : target.TopPoint;
     }
 
     // How far before the target (along the flight) a bot triggers an activatable weapon.

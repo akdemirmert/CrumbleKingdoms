@@ -35,6 +35,35 @@ public class TurnActor : MonoBehaviour {
     }
 }
 
+// A solid body of a fortress that is neither one of its blocks nor its commander: a summoned creature such as the
+// Lich's bone dragon. Projectiles of its own team pass through it as through their own blocks
+// (Projectile.IgnoreOwnTeam), and it never pushes its own fortress's blocks around.
+public class TeamBody : MonoBehaviour {
+    public static readonly List<TeamBody> All = new List<TeamBody>();
+    public Fortress owner;
+    public Collider body;
+
+    void OnEnable() { All.Add(this); }
+    void OnDisable() { All.Remove(this); }
+
+    public static TeamBody Add(GameObject go, Fortress owner, Collider body) {
+        TeamBody t = go.AddComponent<TeamBody>();
+        t.owner = owner;
+        t.body = body;
+        t.IgnoreOwn();
+        return t;
+    }
+
+    // No contact with its own side's blocks and commanders (again after a time rewind has rebuilt blocks).
+    public void IgnoreOwn() {
+        if (owner == null || owner.team == null || body == null) return;
+        foreach (Fortress f in owner.team.fortresses) {
+            foreach (Block b in f.blocks) if (b != null && b.box != null) Physics.IgnoreCollision(body, b.box);
+            if (f.commander != null && f.commander.col != null) Physics.IgnoreCollision(body, f.commander.col);
+        }
+    }
+}
+
 // A projectile (or anything) stuck inside a block or commander. Released when its host breaks.
 public class Embedded : MonoBehaviour {
     public float lifetimeAfterRelease = 3f;

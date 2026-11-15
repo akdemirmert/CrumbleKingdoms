@@ -148,6 +148,26 @@ public static class WeaponDefs {
             description = "Bathes the battle in painted sunshine: a shaft of sunlight burns the enemy commander for 9-13 every turn (4 turns).",
             cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 0.9f, windFactor = 0.6f,
             damage = 11, arc = ArcPreference.High, color = Hex("FFC93C") });
+        // ---------------------------------------------------------------- Lich
+        Add(new WeaponDef { id = WeaponId.GargoyleDive, name = "Gargoyle", title = "Gargoyle Dive",
+            description = "A stone gargoyle. Click and it wakes, folds its wings and dives straight down, smashing through up to two roof blocks.",
+            activateHint = "Click to DIVE",
+            cooldown = 0, minSpeed = 14, maxSpeed = 36, gravityScale = 0.9f, windFactor = 0.6f,
+            damage = 8, radius = 1.6f, force = 5, pierce = 3.2f, arc = ArcPreference.High, color = Hex("A9B8A2") });
+        Add(new WeaponDef { id = WeaponId.SkeletonLegion, name = "Skeletons", title = "Skeleton Legion",
+            description = "A tombstone on the enemy's island: three skeletons climb his wall and tear out a block each. Through an open wall they go for the commander.",
+            cooldown = 2, minSpeed = 12, maxSpeed = 32, gravityScale = 1f, windFactor = 0.5f,
+            damage = 140, arc = ArcPreference.Any, color = Hex("E3DCC2") });   // per skeleton, over its three swings
+        Add(new WeaponDef { id = WeaponId.BoneDragon, name = "Dragon", title = "Bone Dragon",
+            description = "A dragon skull: where it lands (or on a click) the bone dragon rises and breathes soulfire, then perches on your fortress and strikes again on your next two turns.",
+            activateHint = "Click to RAISE the dragon",
+            cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 0.8f, windFactor = 0.6f,
+            damage = 16, radius = 1.7f, force = 6, arc = ArcPreference.Any, color = Hex("7DFF6A") });
+        Add(new WeaponDef { id = WeaponId.BoneHand, name = "Bone Hand", title = "Bone Hand",
+            description = "A bone charm: where it lands (or on a click) a giant skeletal hand bursts from the ground, slams down on what stands there and drags everything down with it.",
+            activateHint = "Click to RAISE the hand",
+            cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 1f, windFactor = 0.5f,
+            damage = 45, radius = 2.8f, force = 10, arc = ArcPreference.Any, color = Hex("B8FF7A") });
     }
 
     static void Add(WeaponDef d) {
@@ -189,6 +209,9 @@ public static class ClassDefs {
         new ClassDef { id = HeroClass.Dali, name = "Dalí", tagline = "The persistence of destruction.",
             description = "Surreal art: mustache birds, a block-eating anteater, melting clocks that rewind time and a painted burning sun.",
             color = WeaponDefs.Hex("E9A23B") },
+        new ClassDef { id = HeroClass.Lich, name = "Lich", tagline = "Death is only the beginning.",
+            description = "An undying sorcerer-king and his summons: a diving gargoyle, a skeleton legion, a bone dragon and a giant bone hand that drags walls into the ground.",
+            color = WeaponDefs.Hex("8FD45A") },
     };
 
     public static ClassDef Get(HeroClass c) { return all[(int)c]; }

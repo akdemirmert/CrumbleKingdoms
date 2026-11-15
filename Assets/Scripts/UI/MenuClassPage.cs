@@ -3,11 +3,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Campaign class selection: one card per class in rows of three. A card shows the portrait, name, tagline,
-// description and the four weapons (cooldown and self-cast badges, tooltips).
+// Campaign class selection: one card per class in centred rows of three (four once there are more than six
+// classes, scaled down to fit). A card shows the portrait, name, tagline, description and the four weapons
+// (cooldown and self-cast badges, tooltips).
 public class MenuClassPage {
-    const int Columns = 3;
     const float CardW = 548f, CardH = 380f, GapX = 24f, GapY = 20f;
+    const float MaxWidth = 1860f, MaxHeight = 800f;                    // room for the cards between title and bottom bar
     const float TextX = 210f;                                          // left edge of the text column
     static readonly Vector2 PortraitCentre = new Vector2(104f, -109f); // from the card's top-left corner
 
@@ -23,16 +24,21 @@ public class MenuClassPage {
 
     public MenuClassPage(MainMenuUI menu, RectTransform page) {
         this.menu = menu;
-        int rows = (Classes.Count + Columns - 1) / Columns;
-        Vector2 size = new Vector2(Columns * CardW + (Columns - 1) * GapX, rows * CardH + (rows - 1) * GapY);
-        RectTransform grid = UIKit.Rect(page, "Cards").Place(new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), size);
-        GridLayoutGroup g = grid.gameObject.AddComponent<GridLayoutGroup>();
-        g.cellSize = new Vector2(CardW, CardH);
-        g.spacing = new Vector2(GapX, GapY);
-        g.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        g.constraintCount = Columns;
-        g.childAlignment = TextAnchor.MiddleCenter;
-        for (int i = 0; i < Classes.Count; i++) BuildCard(grid, (HeroClass)i);
+        int columns = Classes.Count > 6 ? 4 : 3;
+        int rows = (Classes.Count + columns - 1) / columns;
+        Vector2 size = new Vector2(columns * CardW + (columns - 1) * GapX, rows * CardH + (rows - 1) * GapY);
+        RectTransform grid = UIKit.Column(page, GapY, TextAnchor.MiddleCenter);
+        grid.name = "Cards";
+        grid.Place(new Vector2(0.5f, 0.5f), new Vector2(0f, 2f), size);
+        grid.localScale = Vector3.one * Mathf.Min(1f, MaxWidth / size.x, MaxHeight / size.y);
+        RectTransform row = null;
+        for (int i = 0; i < Classes.Count; i++) {
+            if (i % columns == 0) {               // a new row; a short last row stays centred
+                row = UIKit.Row(grid, GapX);
+                row.Size(size.x, CardH);
+            }
+            BuildCard(row, (HeroClass)i);
+        }
         choice.styler = Style;
         choice.onChange = i => menu.SelectedClass = (HeroClass)i;
 
@@ -47,6 +53,7 @@ public class MenuClassPage {
         ClassDef def = ClassDefs.Get(c);
         Card card = new Card();
         RectTransform root = UIKit.Rect(parent, "Card " + def.name);
+        root.Size(CardW, CardH);
         card.group = root.gameObject.AddComponent<CanvasGroup>();
 
         card.glow = UIKit.Img(root, UIKit.Shadow, UIKit.Alpha(def.color, 0f), "Glow");

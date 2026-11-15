@@ -6,7 +6,7 @@ using UnityEngine.UI;
 // Starts from the last duel's options so a rematch from the menu keeps the choices.
 public class MenuDuelPage {
     const int TileColumns = 3;
-    const float TileW = 226f, TileH = 108f, TileGap = 12f;
+    const float TileW = 226f, TileH = 108f, CompactTileH = 70f, TileGap = 12f;   // compact: three rows still fit the panel
 
     readonly DuelOptions options;
     TextMeshProUGUI p1Tagline, p2Tagline;
@@ -46,20 +46,25 @@ public class MenuDuelPage {
                          i => { options.p2Controller = (ControllerType)i; RefreshTaglines(); });
         }
 
-        // Compact grid of class tiles (three per row).
+        // Compact grid of class tiles: centred rows of three (a short last row stays centred); with a third row the
+        // tiles are shorter so it still fits.
         int rows = (Classes.Count + TileColumns - 1) / TileColumns;
-        RectTransform tiles = UIKit.Rect(panel, "Classes").Place(new Vector2(0.5f, 1f), new Vector2(0f, -86f),
-            new Vector2(TileColumns * TileW + (TileColumns - 1) * TileGap, rows * TileH + (rows - 1) * TileGap));
-        GridLayoutGroup grid = tiles.gameObject.AddComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(TileW, TileH);
-        grid.spacing = new Vector2(TileGap, TileGap);
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = TileColumns;
-        grid.childAlignment = TextAnchor.UpperCenter;
+        float tileH = rows > 2 ? CompactTileH : TileH;
+        float width = TileColumns * TileW + (TileColumns - 1) * TileGap;
+        RectTransform tiles = UIKit.Column(panel, TileGap, TextAnchor.UpperCenter);
+        tiles.name = "Classes";
+        tiles.Place(new Vector2(0.5f, 1f), new Vector2(0f, -86f), new Vector2(width, rows * tileH + (rows - 1) * TileGap));
         UIChoice classes = new UIChoice(Color.white);
         Image[] backs = new Image[Classes.Count];
         GameObject[] rings = new GameObject[Classes.Count];
-        for (int i = 0; i < Classes.Count; i++) classes.Add(ClassTile(tiles, (HeroClass)i, out backs[i], out rings[i]));
+        RectTransform row = null;
+        for (int i = 0; i < Classes.Count; i++) {
+            if (i % TileColumns == 0) {
+                row = UIKit.Row(tiles, TileGap);
+                row.Size(width, tileH);
+            }
+            classes.Add(ClassTile(row, (HeroClass)i, tileH, out backs[i], out rings[i]));
+        }
         classes.styler = (i, on) => {
             backs[i].color = on ? UIKit.Alpha(ClassDefs.Get((HeroClass)i).color, 0.4f) : UIKit.SlotColor;
             rings[i].SetActive(on);
@@ -77,19 +82,21 @@ public class MenuDuelPage {
     }
 
     // Portrait on the left, class name beside it; the selected tile is tinted and ringed.
-    UIButton ClassTile(Transform parent, HeroClass c, out Image back, out GameObject ring) {
+    UIButton ClassTile(Transform parent, HeroClass c, float tileH, out Image back, out GameObject ring) {
         ClassDef def = ClassDefs.Get(c);
         RectTransform tile = UIKit.Rect(parent, def.name);
+        tile.Size(TileW, tileH);
+        float portrait = Mathf.Round(tileH * 0.78f), nameX = 13f + portrait + 15f;   // 84 px on full-size tiles
         back = UIKit.RoundedImg(tile, UIKit.SlotColor, 18f, "Back");
         back.rectTransform.Fill();
         back.raycastTarget = true;
         Image r = UIKit.Img(tile, UIKit.Ring, UIKit.Lighten(def.color, 0.2f), "Ring");
-        r.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(8f, 0f), new Vector2(94f, 94f));
+        r.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(8f, 0f), new Vector2(portrait + 10f, portrait + 10f));
         ring = r.gameObject;
-        UIKit.PortraitIcon(tile, c, 84f).Place(new Vector2(0f, 0.5f), new Vector2(13f, 0f), new Vector2(84f, 84f));
+        UIKit.PortraitIcon(tile, c, portrait).Place(new Vector2(0f, 0.5f), new Vector2(13f, 0f), new Vector2(portrait, portrait));
         TextMeshProUGUI name = UIKit.Label(tile, def.name, 30f, UIKit.Lighten(def.color, 0.35f), TextAlignmentOptions.Left);
         name.AutoSize(18f, 30f);
-        name.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(112f, 0f), new Vector2(TileW - 112f - 10f, 44f));
+        name.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(nameX, 0f), new Vector2(TileW - nameX - 10f, 44f));
         UIButton b = tile.gameObject.AddComponent<UIButton>();
         b.hoverScale = 1.04f;
         TooltipTrigger.Add(tile, () => def.name + " — " + def.tagline, () => def.description);

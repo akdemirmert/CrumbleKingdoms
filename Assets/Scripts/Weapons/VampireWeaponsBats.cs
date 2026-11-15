@@ -1,18 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Bat Swarm. A dark cloud of flapping bats flies along the aimed arc (VampireBatSwarm). It releases its bats on
-// a click (or the bot's hint), when it touches anything, or as soon as it comes within TriggerDistance of an
-// enemy fortress. Each bat (VampireBat) picks a nearby enemy block - now and then (two bats at most) the enemy
-// commander -
-// scatters for a moment, then dives at it with light homing, bites (def.damage, x1.5 on a commander) and
-// bursts into a puff. Every bat is a Projectile, so the turn waits for the last one; bats that find nothing
+// Bat Swarm. A dark cloud of flapping bats flies along the aimed arc (VampireBatSwarm). It releases its bats only
+// on a click (or the bot's hint), when it touches anything, or over the sea. Each bat (VampireBat) picks a nearby
+// enemy block - now and then (two bats at most) the enemy commander - scatters for a moment, then dives at it with
+// light homing, bites (def.damage, x1.5 on a commander it reached without biting through a wall) and bursts into a
+// puff. Every bat is a Projectile, so the turn waits for the last one; bats that find nothing
 // to bite flutter off and vanish.
 public class VampireBatSwarm : Projectile {
     const int BatCount = 10;
     const float BatSize = 0.5f;
     const float SweepRadius = 0.45f;
-    const float TriggerDistance = 6f;      // releases this close to an enemy fortress
     const float TargetReach = 16f;         // the bats only go for blocks this close to the release point
     const float CommanderChance = 0.3f;    // share of the bats that go for an enemy commander in reach...
     const int MaxCommanderBats = 2;        // ...but no more than this many per swarm (they bite through his walls)
@@ -23,7 +21,6 @@ public class VampireBatSwarm : Projectile {
     Vector4[] orbits;                       // per bat: radius x, radius y, angular speed, phase
     Light glow;
     AudioSource flutter;
-    readonly List<Bounds> enemies = new List<Bounds>();
     bool released;
 
     public static void Fire(Fortress owner, WeaponDef def, Vector3 origin, Vector3 velocity) {
@@ -64,8 +61,6 @@ public class VampireBatSwarm : Projectile {
         VFX.Emitter(transform, new Color(1f, 0.15f, 0.22f), 0.09f, 18f);    // red glints, like eyes in the dark
         glow = VampireKit.Glow(transform, VampireKit.BloodGlow, 2.2f, 5f);
         flutter = VampireSounds.Loop(VampireSounds.Flutter, transform, 0.45f);
-        if (BattleManager.I != null && owner != null)
-            foreach (Fortress f in BattleManager.I.EnemiesOf(owner)) enemies.Add(f.GetBounds());
     }
 
     protected override void FixedUpdate() {
@@ -81,7 +76,7 @@ public class VampireBatSwarm : Projectile {
         }
         manualVelocity = v;
         transform.position = p + step;
-        if (NearEnemy(transform.position) || transform.position.y < World.WaterY + 0.4f) Release(transform.position);
+        if (transform.position.y < World.WaterY + 0.4f) Release(transform.position);
     }
 
     void Update() { if (!released) UpdateCloud(); }
@@ -93,11 +88,6 @@ public class VampireBatSwarm : Projectile {
     protected override void OnDestroy() {
         base.OnDestroy();
         SFX.Stop(flutter);
-    }
-
-    bool NearEnemy(Vector3 p) {
-        foreach (Bounds b in enemies) if (b.SqrDistance(p) < TriggerDistance * TriggerDistance) return true;
-        return false;
     }
 
     // Each bat circles the centre on its own tilted ellipse, leaning into the turn.

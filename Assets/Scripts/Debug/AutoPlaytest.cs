@@ -81,7 +81,7 @@ public class AutoPlaytest : MonoBehaviour {
     }
 
     IEnumerator Start() {
-        // -quick: three duels (classes 0v1, 2v3, 4v5) fire every weapon once; skips the rest.
+        // -quick: four duels (classes 0v1, 2v3, 4v5, 6v0) fire every weapon once; skips the rest.
         // -only N: just the weapon duel of class N against class N+1.
         // -bench T [-classes 3,5]: weapon damage benchmark (see Bench), T trials per weapon.
         // -duels N [-classes 3,5]: full bot duels of those classes against every other class (see DuelSeries).
@@ -222,7 +222,8 @@ public class AutoPlaytest : MonoBehaviour {
     // with a perfect throw and no wind, at a fresh Soldier keep, `trials` times on different layouts (the same layouts
     // for every weapon). Notes the enemy commander's damage, the keep's integrity loss and the blocks it lost, measured
     // when the target's turn starts, so the first flare of a painted sun counts (the anteater eats on Dalí's own turns,
-    // so it shows nothing here). A kill also counts the defeated keep's collapse in its integrity and blocks.
+    // so it shows nothing here, and the bone dragon's later passes are missed). A kill also counts the defeated keep's
+    // collapse in its integrity and blocks.
     IEnumerator Bench(int trials, List<int> classes) {
         AIProfile perfect = new AIProfile { skill = 1f, aimError = 0f, powerError = 0f, windSense = 1f, thinkTime = 0.2f };
         foreach (int c in classes) {

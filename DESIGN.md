@@ -1,7 +1,7 @@
 # Crumble Kingdoms — Design & Technical Spec
 
 A turn-based physics artillery game (Unity 6.6, URP, Input System). Two or more fortresses
-stand on islands across the sea; each fortress has a **Commander** and one of six classes with
+stand on islands across the sea; each fortress has a **Commander** and one of seven classes with
 **four weapons**. Players take turns hurling weapons that hook, pierce, explode, rain meteors, call
 lightning, pull blocks into a black hole, beam them up or blow towers over with a shockwave.
 Fortresses are built from physical blocks (wood, stone, metal, glass, ice, powder kegs) that crack,
@@ -39,7 +39,8 @@ levels, game state management.
 * **Class identity**: a fortress and its commander show their class at a glance — Soldier:
   granite, iron and oak, crenellations, banners; Wizard: rune-carved slate, violet glass,
   pointed roofs, floating crystals; God: white marble and gold, columns, golden roofs. The Vampire,
-  Alien and Dalí bring their own skins, decorations and commanders (`ClassLooks`).
+  Alien, Dalí and Lich bring their own skins, decorations and commanders (`ClassLooks`); the Lich's
+  is a necropolis of rune-glowing basalt, obsidian spires, soulfire braziers and tombstones.
   Physics is identical across skins; the team colour appears only on flags and small accents.
 
 ## 2. Classes and weapons (WeaponId order is fixed)
@@ -70,6 +71,10 @@ levels, game state management.
 | Dalí | 2 | Anteater | Burrows to the enemy fortress and **eats one bottom block** at the start of each of Dalí's turns (four meals). |
 | Dalí | 3 | MeltingClocks | On **click** (or impact) time melts: the battle is **rewound** to the start of the previous turn (`BattleSnapshot`) and Dalí plays again. |
 | Dalí | 4 | PaintedSun | The arena lights up in painted sunshine; at the start of each of the target's next four turns a shaft of sunlight burns its commander for 9–13 and lights a wooden block. |
+| Lich | 1 | GargoyleDive | A stone gargoyle. Asleep it lands like a heavy stone; on **click** it wakes and **dives straight down**, smashing through up to two blocks (pierce budget 3.2: two stone roof layers), and bursts where it stops. The bot throws it high over the enemy commander, above his roof. |
+| Lich | 2 | SkeletonLegion | A tombstone: on the enemy's island **three skeletons** rise, run to his wall, climb it and **tear out a block each**; through an open wall they strike the commander. A falling block or a blast turns a skeleton to bones. The bot throws it in front of the wall. |
+| Lich | 3 | BoneDragon | A dragon skull; on impact or **click** the **bone dragon** rises there and breathes soulfire (blasts that hurt stone too) on the spot, then perches on the Lich's fortress and sweeps the nearest enemy's top with soulfire at the start of his next two turns. It has 60 HP while it perches (`TeamBody`, `IDamageable`). |
+| Lich | 4 | BoneHand | A bone charm; on impact or **click** a **giant skeletal hand** bursts from the ground under it, slams down on the top (a blast that drives everything downwards), then closes and sinks back for 1.3 s, **dragging down** the enemy's blocks, commander and rubble within 2.8 m (extra downward pull, and a crushing grip of 70 per second that breaks the blocks it holds; the Lich's own side is spared). |
 
 Numbers live in `WeaponDefs` (Scripts/Core/Defs.cs) — the single source of truth.
 
@@ -107,7 +112,7 @@ any arena, day or night, wind on/off.
 | Weapons | Projectile (base), PiercingProjectile (shared pierce), WeaponFactory; files per class |
 | FX | VFX (particles, flashes, rings, floating text), LightningBolt, ScreenFlash |
 | Audio | SFX (SoundId, synthesis, pooled playback), Music |
-| World | ArenaBuilder (terrain, sky, sea, background per theme), FortressGenerator (blueprints), CommanderModel, ClassSkins, ClassLooks + Vampire/Alien/Dalí looks |
+| World | ArenaBuilder (terrain, sky, sea, background per theme), FortressGenerator (blueprints), CommanderModel, ClassSkins, ClassLooks + Vampire/Alien/Dalí/Lich looks |
 | UI | UIKit (helpers), MainMenuUI, BattleHUD, IconRenderer |
 | Util | Mats (runtime material cache), MeshKit (boxes with metre UVs, rocks, cones), ModelKit (primitive parts), TexKit (procedural textures) |
 | Debug | AutoPlaytest (`-autotest <dir>` screenshots) |

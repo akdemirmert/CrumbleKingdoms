@@ -77,7 +77,17 @@ public class PiercingProjectile : Projectile {
                 }
 
                 Block b = col.GetComponentInParent<Block>();
-                if (b == null || !b.IsAlive) continue;
+                if (b == null) {                      // something else that can be hurt (a summoned creature)
+                    IDamageable other = col.GetComponentInParent<IDamageable>();
+                    if (other != null && other.IsAlive) {
+                        Hit(col, damage * SpeedFactor(v), DamageType.Pierce, hp, owner, dir * 4f);
+                        RaiseImpact(hp);
+                        VFX.Sparks(hp, def.color, 8);
+                        budget -= 0.5f;
+                    }
+                    continue;
+                }
+                if (!b.IsAlive) continue;
                 float cost = b.def.pierceCost;
                 if (b.rb != null && !b.rb.isKinematic)
                     b.rb.AddForceAtPosition(dir * blockPush * Mathf.Sqrt(b.rb.mass) * SpeedFactor(v), hp, ForceMode.Impulse);

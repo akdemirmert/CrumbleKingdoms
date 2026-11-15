@@ -9,7 +9,7 @@ A turn-based physics artillery game made in Unity 6.6 for the physics-game chapt
 catapult and artillery games such as *Crossbows and Catapults*, *Worms* and *Scorched Earth*.
 
 Two or more fortresses stand on islands across the sea. Each fortress has a **Commander** and one of
-**six classes with four weapons each**. Fortresses are built from physical blocks (wood, stone, metal,
+**seven classes with four weapons each**. Fortresses are built from physical blocks (wood, stone, metal,
 glass, ice, powder kegs) that crack, break into debris and topple.
 
 ---
@@ -38,7 +38,7 @@ Unzip the package first. The unzipped `GROUP05_CrumbleKingdoms` folder **is the 
 | Aim and fire | press the left button anywhere, **drag back** like a slingshot, release | ←/→ angle, ↑/↓ power (Shift = faster), then Space / Enter to fire |
 | Cancel a drag | right click while dragging | Esc while dragging |
 | Choose a weapon | click a slot in the weapon bar | 1 – 4 |
-| Special power while the shot flies (bomb, drone, lightning, meteor, void, horn, bats, UFO, clocks) | left click | Space |
+| Special power while the shot flies (bomb, drone, lightning, meteor, void, horn, bats, UFO, clocks, gargoyle, dragon skull, bone charm) | left click | Space |
 | Steer the Soldier's drone | move the mouse | |
 | Use a self-cast weapon (Blood Cloak, Space Warp) – no aiming | left click | Space / Enter |
 | Zoom / pan the camera | mouse wheel / right or middle drag | |
@@ -73,6 +73,7 @@ Unzip the package first. The unzipped `GROUP05_CrumbleKingdoms` folder **is the 
 | **Vampire** | **Bat Swarm** – click to release bats that dive at blocks and the commander; the ones going for the commander bite through his walls | **Vampire Fang** – pierces up to five blocks (fewer stone or metal); a bite on the commander drains 30 % of his maximum health into yours | **Burning Candelabra** – smashes through two blocks (wood catches fire), then its three flames burst in fire blasts and light wood | **Blood Cloak** – absorbs every hit on your commander for one enemy turn (the first that hits it), or lasts two turns |
 | **Alien** | **UFO (Flying Saucer)** – click to hover; a tractor beam lifts up to three blocks (and exposed commanders) | **Ray Gun** – straight laser, no arc or wind, burns through up to five blocks (fewer stone or metal) | **Flying Cow** – a heavy cow that bounces through the fortress | **Space Warp** – two rounds of low gravity; enemy throws lose a quarter of their power |
 | **Dalí** | **Mustache Birds** – his mustache splits into two doodle birds that weave along the aimed arc, peck through a block or two and burst (it grows back at the start of his next turn) | **Pet Anteater** – burrows under the enemy fortress and eats one block per turn for four turns | **Melting Clocks** – click to melt time: the enemy's last move is undone and Dalí plays again | **Painted Sun** – the arena lights up in painted sunshine and the enemy commander burns for 9–13 every turn for four turns |
+| **Lich** | **Gargoyle Dive** – a stone gargoyle; click and it wakes and dives straight down, smashing through up to two roof blocks before it bursts | **Skeleton Legion** – a tombstone on the enemy's island raises three skeletons that climb his wall and tear out a block each (through an open wall they strike the commander) | **Bone Dragon** – a dragon skull; the bone dragon rises where it lands and breathes soulfire (it burns stone too), then perches on your fortress and sweeps the enemy again on your next two turns (enemies can shoot it down) | **Bone Hand** – a bone charm; where it lands (or on a click) a giant skeletal hand bursts from the ground, slams down on the top and crushes the enemy blocks in its grip, dragging them down into the ground |
 
 ## Where the course topics are
 
@@ -100,7 +101,7 @@ Unzip the package first. The unzipped `GROUP05_CrumbleKingdoms` folder **is the 
   multi-turn effects and time-rewind snapshots.
 * `Weapons` – projectile base class, shared piercing flight, weapon registry, files per class.
 * `World` – arena (islands, sea, sky, lighting per theme), fortress generator, commander models, class looks
-  (`ClassSkins` for the Soldier, Wizard and God; `ClassLooks` + the Vampire, Alien and Dalí look files).
+  (`ClassSkins` for the Soldier, Wizard and God; `ClassLooks` + the Vampire, Alien, Dalí and Lich look files).
 * `FX`, `Audio` – particle effects; procedurally synthesised sounds and music.
 * `UI` – menus, HUD, icons.
 * `Util` – procedural materials, meshes, models and textures (`Mats`, `MeshKit`, `ModelKit`, `TexKit`).

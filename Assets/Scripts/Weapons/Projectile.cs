@@ -9,7 +9,7 @@ public abstract class Projectile : MonoBehaviour {
     public static readonly List<Projectile> Active = new List<Projectile>();
     public static event Action<Projectile, Vector3> AnyImpact;
 
-    [System.NonSerialized] public WeaponDef def;
+    [NonSerialized] public WeaponDef def;   // set by Launch; never saved
     public Fortress owner;
     public Rigidbody rb;                 // null for kinematic/manual projectiles
     public float gravityScale = 1f;
@@ -18,6 +18,7 @@ public abstract class Projectile : MonoBehaviour {
     public bool cameraFollows = true;    // the camera tracks projectiles that have this set
     public float age;
     public bool activated, finished, impacted;
+    [NonSerialized] public float finishedAt = -1f;   // Time.fixedTime of Finish (a body it hit in that step still counts the hit)
 
     // Bot hint: activate when the projectile crosses this x (travel direction aware). NaN = never.
     public float botActivateX = float.NaN;
@@ -74,6 +75,7 @@ public abstract class Projectile : MonoBehaviour {
     public void Finish(bool destroyObject, float delay = 0f) {
         if (!finished) {
             finished = true;
+            finishedAt = Time.fixedTime;
             Active.Remove(this);
             if (actor != null) Destroy(actor);
         }
@@ -94,6 +96,8 @@ public abstract class Projectile : MonoBehaviour {
         if (b != null) return b.fortress != null && b.fortress.team == owner.team;
         Commander cm = c.GetComponentInParent<Commander>();
         if (cm != null) return cm.fortress != null && cm.fortress.team == owner.team;
+        TeamBody tb = c.GetComponentInParent<TeamBody>();
+        if (tb != null) return tb.owner != null && tb.owner.team == owner.team;
         return false;
     }
 
@@ -105,6 +109,9 @@ public abstract class Projectile : MonoBehaviour {
             foreach (Block b in f.blocks) if (b != null && b.box != null) foreach (Collider m in mine) Physics.IgnoreCollision(m, b.box);
             if (f.commander != null && f.commander.col != null) foreach (Collider m in mine) Physics.IgnoreCollision(m, f.commander.col);
         }
+        foreach (TeamBody tb in TeamBody.All)
+            if (tb != null && tb.body != null && tb.owner != null && tb.owner.team == owner.team)
+                foreach (Collider m in mine) Physics.IgnoreCollision(m, tb.body);
     }
 
     // Adds a dynamic rigidbody set up for projectiles (continuous collision, interpolation, own gravity handled).

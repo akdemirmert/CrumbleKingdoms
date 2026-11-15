@@ -10,10 +10,14 @@ public static class Explosion {
     static readonly Collider[] buffer = new Collider[512];
     static readonly RaycastHit[] coverHits = new RaycastHit[16];
 
+    // Every blast (centre, radius), for things that have no collider but should notice one (the Lich's skeletons).
+    public static event System.Action<Vector3, float> Blasted;
+
     // force: velocity change (m/s) given to a 1 kg body at the centre; heavier bodies move less (mass^0.6).
     public static void Create(Vector3 pos, float radius, float damage, float force, Fortress source,
                               DamageType type = DamageType.Explosion, BlastStyle style = BlastStyle.Fire,
                               float upward = 0.35f, bool effects = true) {
+        Blasted?.Invoke(pos, radius);
         Push(pos, radius, force, upward, out List<(IDamageable target, float falloff, Vector3 point)> hits);
         foreach (var h in hits) {
             if (h.target == null || !h.target.IsAlive) continue;
