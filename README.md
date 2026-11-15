@@ -1,10 +1,10 @@
-# Siege of Gods
+# Crumble Kingdoms
 
 **SENG 216 – Introduction to Game Design and Development · Group 5**
 
 Mert AKDEMİR · Mehmet BELEN · Cem ÇİFTÇİ · Ahmet Buğra KARA · Derviş Can TAM
 
-A turn-based physics artillery game made in Unity 6.3 for the physics-game chapter
+A turn-based physics artillery game made in Unity 6.6 for the physics-game chapter
 (physics, collisions, mouse interaction, levels, game state management), inspired by
 catapult and artillery games such as *Crossbows and Catapults*, *Worms* and *Scorched Earth*.
 
@@ -16,19 +16,19 @@ glass, ice, powder kegs) that crack, break into debris and topple.
 
 ## Running the game
 
-Unzip the package first. The unzipped `GROUP05_SiegeOfGods` folder **is the Unity project**
+Unzip the package first. The unzipped `GROUP05_CrumbleKingdoms` folder **is the Unity project**
 (`Assets`, `Packages`, `ProjectSettings`); it also holds the Windows build (`Windows Build/`) and
-`Play Siege of Gods.bat`.
+`Play Crumble Kingdoms.bat`.
 
-* **Windows build:** run `Windows Build/SiegeOfGods.exe`, or double-click `Play Siege of Gods.bat`.
+* **Windows build:** run `Windows Build/CrumbleKingdoms.exe`, or double-click `Play Crumble Kingdoms.bat`.
 * **Unity project:** in Unity Hub choose **Add ▸ Add project from disk**, select the unzipped
-  `GROUP05_SiegeOfGods` folder and open it with **Unity 6000.3.26f1** (Unity 6.3 LTS, URP). The first open
+  `GROUP05_CrumbleKingdoms` folder and open it with **Unity 6000.6.9f1** (Unity 6.6, URP). The first open
   takes a few minutes while Unity downloads the packages and rebuilds its Library folder. The editor then
   opens the main menu scene: press **Play** to play the game inside Unity.
   All the game code is in `Assets/Scripts` (editor tools in `Assets/Editor`).
   Scenes: `Assets/Scenes/MainMenu.unity` (start here) and `Assets/Scenes/Battle.unity`.
-  The menu **Siege of Gods ▸ 1. Set up project / 2. Build assets / 3. Build scenes / 4. Build Windows player**
-  regenerates everything from code (the player goes to `Builds/Windows/SiegeOfGods.exe` inside the project);
+  The menu **Crumble Kingdoms ▸ 1. Set up project / 2. Build assets / 3. Build scenes / 4. Build Windows player**
+  regenerates everything from code (the player goes to `Builds/Windows/CrumbleKingdoms.exe` inside the project);
   it is not needed to play, the scenes are already built.
 
 ## How to play
@@ -70,9 +70,9 @@ Unzip the package first. The unzipped `GROUP05_SiegeOfGods` folder **is the Unit
 | **Soldier** | **Grappling Hook** – latches onto a block (or the commander) and yanks it out of the wall | **Fuse Bomb** – bouncing bomb, click to detonate | **Kamikaze Drone** – follows your mouse in flight, click to blow it up | **Airstrike** – a smoke flare calls in a bomber that drops five bombs across it |
 | **Wizard** | **Fireball** – explodes and sets wood on fire; fire spreads | **Lightning Orb** – on impact or click a bolt strikes down that column and chains to metal blocks and enemy commanders | **Meteor Orb** – opens a sky portal, seven meteors rain down | **Void Orb** – a black hole pulls the fortress in, then bursts |
 | **God** | **Loki – Trickster Daggers** – four daggers, one real and three illusions | **Thor – Mjolnir** – smashes through, calls lightning, flies back to Thor | **Heimdall – Gjallarhorn** – rainbow shockwave hurls blocks away | **Odin – Gungnir** – homes onto a commander and pierces everything |
-| **Vampire** | **Bat Swarm** – click to release bats that dive at blocks and the commander | **Vampire Fang** – a bite on the commander drains 22 % of his maximum health into yours | **Burning Candelabra** – its three flames burst in fire blasts and light wood | **Blood Cloak** – absorbs every hit on your commander for one enemy turn (the first that hits it), or lasts two turns |
+| **Vampire** | **Bat Swarm** – click to release bats that dive at blocks and the commander; the ones going for the commander bite through his walls | **Vampire Fang** – pierces up to five blocks (fewer stone or metal); a bite on the commander drains 30 % of his maximum health into yours | **Burning Candelabra** – smashes through two blocks (wood catches fire), then its three flames burst in fire blasts and light wood | **Blood Cloak** – absorbs every hit on your commander for one enemy turn (the first that hits it), or lasts two turns |
 | **Alien** | **UFO (Flying Saucer)** – click to hover; a tractor beam lifts up to three blocks (and exposed commanders) | **Ray Gun** – straight laser, no arc or wind, burns through up to five blocks (fewer stone or metal) | **Flying Cow** – a heavy cow that bounces through the fortress | **Space Warp** – two rounds of low gravity; enemy throws lose a quarter of their power |
-| **Dalí** | **Mustache Birds** – his mustache splits into two doodle birds that weave along the aimed arc and each burst in a small blast (it grows back at the start of his next turn) | **Pet Anteater** – burrows under the enemy fortress and eats one block per turn for four turns | **Melting Clocks** – click to melt time: the enemy's last move is undone and Dalí plays again | **Painted Sun** – the arena lights up in painted sunshine and the enemy commander burns for 6–10 every turn for four turns |
+| **Dalí** | **Mustache Birds** – his mustache splits into two doodle birds that weave along the aimed arc, peck through a block or two and burst (it grows back at the start of his next turn) | **Pet Anteater** – burrows under the enemy fortress and eats one block per turn for four turns | **Melting Clocks** – click to melt time: the enemy's last move is undone and Dalí plays again | **Painted Sun** – the arena lights up in painted sunshine and the enemy commander burns for 9–13 every turn for four turns |
 
 ## Where the course topics are
 
@@ -107,9 +107,9 @@ Unzip the package first. The unzipped `GROUP05_SiegeOfGods` folder **is the Unit
 * `Editor/SiegeBuilder.cs` – builds settings, fonts, materials, scenes and the player from code;
   `Editor/PhysicsProbe.cs` – a fortress stability check run in batch mode;
   `Editor/OpenMainMenuOnStart.cs` – opens the main menu scene when the project is opened.
-* `Debug/AutoPlaytest.cs` – `SiegeOfGods.exe -autotest <folder>` plays itself and saves screenshots (testing aid).
+* `Debug/AutoPlaytest.cs` – `CrumbleKingdoms.exe -autotest <folder>` plays itself and saves screenshots (testing aid).
 
 ## Credits
 
 All models, textures, sounds and music are generated by code at runtime. Font: **Fredoka**
-(SIL Open Font License, `Assets/Fonts/OFL.txt`). Made with Unity 6.3 and the Universal Render Pipeline.
+(SIL Open Font License, `Assets/Fonts/OFL.txt`). Made with Unity 6.6 and the Universal Render Pipeline.

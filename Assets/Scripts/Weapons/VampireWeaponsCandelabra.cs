@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Burning Candelabra: a golden three-armed candelabra with lit candles, spinning end over end so its flames draw
-// fiery spirals and drip wax. On its first contact it breaks apart: the three flames burst one after another in
+// fiery spirals and drip wax. It smashes through the first MaxSmash enemy blocks it meets (each takes def.damage as
+// Fire damage, wood catches fire, and it keeps SmashKeep of its speed), then breaks apart: the three flames burst one after another in
 // a fan of fire blasts (each a full Explosion with def.radius / def.damage / def.force, Fire damage) that set the
 // enemy's wood around them alight, while its arms fly off still burning. In the sea it is simply doused.
 public class VampireCandelabra : Projectile {
     const float Mass = 3f, Radius = 0.36f;
+    const int MaxSmash = 2;                // blocks it smashes through before it bursts
+    const float SmashKeep = 0.8f;          // share of its speed kept through each of them
+    const float SmashSpeed = 5f;           // slower than this it bursts on what it touches
     const float SpinSpeed = 640f;          // deg/s
     const float CentreHeight = 0.48f;      // the model spins about this point of its stem
     const float FanAngle = 50f;            // the side blasts burst this far either side of the centre one...
@@ -22,6 +26,8 @@ public class VampireCandelabra : Projectile {
     Light glow;
     AudioSource whirl;
     Vector3 lastVelocity;                  // before the current physics step (the collision callback sees the bounce)
+    SphereCollider body;
+    int smashed;
     bool burst;
 
     public static void Fire(Fortress owner, WeaponDef def, Vector3 origin, Vector3 velocity) {
@@ -36,7 +42,8 @@ public class VampireCandelabra : Projectile {
     protected override void OnLaunch(Vector3 velocity) {
         spin = ModelKit.Root("Spin", transform).transform;
         Build(spin, out flames).transform.localPosition = new Vector3(0f, -CentreHeight, 0f);
-        gameObject.AddComponent<SphereCollider>().radius = Radius;
+        body = gameObject.AddComponent<SphereCollider>();
+        body.radius = Radius;
         AddBody(Mass, velocity);
         rb.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;   // only the model spins
         lastVelocity = velocity;
@@ -63,13 +70,35 @@ public class VampireCandelabra : Projectile {
         if (burst || finished) return;
         Vector3 p = c.contactCount > 0 ? c.GetContact(0).point : transform.position;
         p.z = 0f;
+        Block block = c.collider.GetComponentInParent<Block>();
+        if (block != null && block.IsAlive && smashed < MaxSmash && lastVelocity.magnitude > SmashSpeed) {
+            Smash(block, c.collider, p);
+            return;
+        }
         Vector3 normal = transform.position - p;   // from the surface towards the candelabra
         normal.z = 0f;
         normal = normal.sqrMagnitude > 1e-4f ? normal.normalized : -lastVelocity.normalized;
         StartCoroutine(Burst(p, normal));
     }
 
-    // Three fire blasts in a fan pointing between the flight direction and straight into the surface.
+    // Straight through a block: it takes a fire hit (wood catches fire), and the candelabra flies on with most of its speed
+    // (the physics already bounced it off, so the speed from before the contact is put back).
+    void Smash(Block block, Collider hit, Vector3 p) {
+        smashed++;
+        RaiseImpact(p);
+        Physics.IgnoreCollision(body, hit);
+        Hit(block, def.damage, DamageType.Fire, p, owner, lastVelocity.normalized * 5f);
+        if (block.IsAlive && block.def.flammable) block.Ignite(IgniteSeconds, owner);
+        rb.linearVelocity = lastVelocity * SmashKeep;
+        lastVelocity = rb.linearVelocity;
+        VampireSounds.Play(VampireSounds.Clang, p, 0.6f, 1.2f);
+        VFX.Sparks(p, VampireKit.Gold, 10);
+        VFX.Burst(p, 12, 4f, 0.12f, 0.6f, VampireKit.Flame, 0.3f, true, TexKit.SoftCircle);
+        BattleCamera.Shake(0.15f);
+    }
+
+    // Three fire blasts in a fan pointing between the flight direction and straight into the surface, all kept on the
+    // near side of it.
     IEnumerator Burst(Vector3 p, Vector3 normal) {
         burst = true;
         RaiseImpact(p);
@@ -82,9 +111,9 @@ public class VampireCandelabra : Projectile {
         BreakApart(p, normal);
         Vector3 origin = p + normal * 0.2f;
         Vector3[] blasts = {
-            origin + into * 0.4f,
-            origin + Quaternion.Euler(0f, 0f, FanAngle) * into * FanReach,
-            origin + Quaternion.Euler(0f, 0f, -FanAngle) * into * FanReach,
+            origin + Outside(into * 0.4f, normal),
+            origin + Outside(Quaternion.Euler(0f, 0f, FanAngle) * into * FanReach, normal),
+            origin + Outside(Quaternion.Euler(0f, 0f, -FanAngle) * into * FanReach, normal),
         };
         for (int i = 0; i < blasts.Length; i++) {
             if (i > 0) yield return new WaitForSeconds(Stagger);
@@ -95,6 +124,13 @@ public class VampireCandelabra : Projectile {
         }
         yield return new WaitForSeconds(0.1f);
         Finish(true);
+    }
+
+    // Drops the part of an offset that points into the surface it hit: a blast that starts inside a block does not see
+    // that block as cover (Explosion.Cover raycasts from the blast), so the wall it struck must stay in between.
+    static Vector3 Outside(Vector3 offset, Vector3 normal) {
+        float sink = Vector3.Dot(offset, normal);
+        return sink < 0f ? offset - normal * sink : offset;
     }
 
     // The enemy's wood (and powder kegs) within a blast's reach catches fire; it spreads by itself (Block.SpreadFire).

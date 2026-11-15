@@ -106,9 +106,10 @@ public class MainMenuUI : MonoBehaviour {
         breathe.speed = 1.3f;
         breathe.scaleAmount = 0.012f;
 
-        TextMeshProUGUI title = UIKit.Title(logo, "SIEGE OF GODS", 148f, Color.white);
+        TextMeshProUGUI title = UIKit.Title(logo, "CRUMBLE KINGDOMS", 148f, Color.white);
         title.rectTransform.Place(new Vector2(0.5f, 1f), Vector2.zero, new Vector2(1400f, 176f));
         title.characterSpacing = 5f;
+        title.AutoSize(96f, 148f);
         UIKit.Gradient(title, WeaponDefs.Hex("FFF1C1"), WeaponDefs.Hex("F2A93B"));
 
         RectTransform column = UIKit.Column(page, 16f);

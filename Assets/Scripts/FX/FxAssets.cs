@@ -81,7 +81,7 @@ public static class FxAssets {
     static Material Variant(string kind, Material source, Texture2D tex, float intensity) {
         intensity = Mathf.Round(Mathf.Clamp(intensity, 0.25f, 8f) * 4f) / 4f;   // quarter steps keep the cache small
         if (Mathf.Approximately(intensity, 1f)) return source;
-        string key = kind + (tex != null ? tex.GetInstanceID() : 0) + "_" + intensity.ToString("0.00");
+        string key = kind + (tex != null ? tex.GetEntityId().ToString() : "0") + "_" + intensity.ToString("0.00");
         if (variants.TryGetValue(key, out Material m) && m != null) return m;
         m = new Material(source) { name = "Fx " + key };
         m.SetColor(BaseColorId, new Color(intensity, intensity, intensity, 1f));

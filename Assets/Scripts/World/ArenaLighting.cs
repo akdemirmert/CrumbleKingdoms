@@ -45,7 +45,7 @@ public static class ArenaLighting {
     // (the icon renderer's temporary lights only light the icon stage).
     static Light FindSun() {
         if (RenderSettings.sun != null && RenderSettings.sun.type == LightType.Directional) return RenderSettings.sun;
-        foreach (Light l in Object.FindObjectsByType<Light>(FindObjectsSortMode.None))
+        foreach (Light l in Object.FindObjectsByType<Light>())
             if (l.type == LightType.Directional && (l.cullingMask & Layers.GroundMask) != 0) return l;
         return null;
     }
@@ -112,7 +112,7 @@ public static class ArenaLighting {
     }
 
     static Volume FindGlobalVolume() {
-        foreach (Volume v in Object.FindObjectsByType<Volume>(FindObjectsSortMode.None))
+        foreach (Volume v in Object.FindObjectsByType<Volume>())
             if (v.isGlobal) return v;
         return null;
     }

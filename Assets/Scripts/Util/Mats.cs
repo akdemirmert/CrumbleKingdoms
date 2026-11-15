@@ -15,7 +15,7 @@ public static class Mats {
     static string Key(string kind, Color c, float a = 0f, float b = 0f, Object tex = null, Color e = default) {
         return string.Format(System.Globalization.CultureInfo.InvariantCulture,
             "{0}|{1:0.###},{2:0.###},{3:0.###},{4:0.###}|{5:0.##}|{6:0.##}|{7}|{8:0.##},{9:0.##},{10:0.##}",
-            kind, c.r, c.g, c.b, c.a, a, b, tex != null ? tex.GetInstanceID() : 0, e.r, e.g, e.b);
+            kind, c.r, c.g, c.b, c.a, a, b, tex != null ? tex.GetEntityId().ToString() : "0", e.r, e.g, e.b);
     }
 
     static Material Make(string key, Material source, System.Action<Material> setup) {

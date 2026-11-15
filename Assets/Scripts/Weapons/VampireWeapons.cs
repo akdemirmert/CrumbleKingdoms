@@ -5,9 +5,9 @@ using UnityEngine.Rendering;
 // The Vampire's four weapons. This file registers them with WeaponFactory and holds what they and the
 // Vampire's look share (VampireKit: colours, materials, the bat model, mesh and effect helpers).
 // Each weapon lives in its own file:
-//   VampireWeaponsBats.cs        Bat Swarm: a flapping cloud that releases ten diving, biting bats
+//   VampireWeaponsBats.cs        Bat Swarm: a flapping cloud that releases ten diving, biting bats (two may bite through to the commander)
 //   VampireWeaponsFang.cs        Vampire Fang: a piercing fang that drains a bitten commander's blood
-//   VampireWeaponsCandelabra.cs  Burning Candelabra: three fire blasts in a fan that set wood alight
+//   VampireWeaponsCandelabra.cs  Burning Candelabra: smashes through two blocks, then three fire blasts in a fan that set wood alight
 //   VampireWeaponsCloak.cs       Blood Cloak: a bat-wing cloak over the chamber that blocks every hit
 //   VampireWeaponsSounds.cs      the class's own synthesised sounds
 static class VampireWeapons {
@@ -178,8 +178,8 @@ static class VampireKit {
         Object.Destroy(fx.gameObject, life);
     }
 
-    // The nearest solid thing a sphere moving by `step` would touch, ignoring the projectile's own team.
-    public static bool Sweep(Projectile self, Vector3 from, float radius, Vector3 step, out RaycastHit hit) {
+    // The nearest solid thing a sphere moving by `step` would touch, ignoring the projectile's own team (and `skip`).
+    public static bool Sweep(Projectile self, Vector3 from, float radius, Vector3 step, out RaycastHit hit, HashSet<Collider> skip = null) {
         hit = default;
         float len = step.magnitude;
         if (len < 1e-5f) return false;
@@ -188,7 +188,7 @@ static class VampireKit {
         float best = float.MaxValue;
         for (int i = 0; i < n; i++) {
             RaycastHit h = sweepBuffer[i];
-            if (h.collider == null || h.distance >= best || self.IsOwnTeam(h.collider)) continue;
+            if (h.collider == null || h.distance >= best || self.IsOwnTeam(h.collider) || (skip != null && skip.Contains(h.collider))) continue;
             if (h.distance <= 0f && h.point == Vector3.zero) h.point = from;   // it started inside the collider
             best = h.distance;
             hit = h;

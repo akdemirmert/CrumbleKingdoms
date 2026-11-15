@@ -6,7 +6,7 @@ using UnityEngine.Rendering.Universal;
 
 // Painted Sun: Dalí throws a wobbling ball of golden paint. Where it splats, a painted sun rises over the nearest
 // enemy fortress and the whole arena lights up in warm sunshine (PaintedSunEffect, SunlitArena). At the start of
-// each of that fortress's next four turns the sun flares: a shaft of sunlight burns its commander for 6-10
+// each of that fortress's next four turns the sun flares: a shaft of sunlight burns its commander for 9-13
 // (sunlight ignores walls) and sets one of its wooden blocks alight. Then the light fades back.
 public class PaintBall : Projectile {
     const float Radius = 0.26f, Mass = 1f;
@@ -150,7 +150,7 @@ public class PaintedSunEffect : TurnEffect {
     void Burn() {
         Commander c = target.commander;
         if (c != null && c.IsAlive) {
-            float typical = def != null ? def.damage : 8f;
+            float typical = def != null ? def.damage : 11f;
             float amount = Mathf.Round(Random.Range(typical - 2f, typical + 2f));
             Vector3 at = c.AimPoint;
             DaliSunBeam.Create(SkyAbove(at), new Vector3(at.x, at.y, BeamZ), 0.7f, 0.6f);
@@ -333,7 +333,7 @@ public class SunlitArena : MonoBehaviour {
         baseSky = RenderSettings.ambientSkyColor;
         baseEquator = RenderSettings.ambientEquatorColor;
         baseGround = RenderSettings.ambientGroundColor;
-        foreach (Volume v in FindObjectsByType<Volume>(FindObjectsSortMode.None))
+        foreach (Volume v in FindObjectsByType<Volume>())
             if (v.isGlobal && v.profile != null && v.profile.TryGet(out grading)) break;
         if (grading != null) {
             baseExposure = grading.postExposure.value;

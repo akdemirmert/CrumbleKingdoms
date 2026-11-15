@@ -13,7 +13,7 @@ public class UIButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     public Image face;                 // tinted by state (optional)
     public RectTransform faceRect;     // pushed down while pressed (optional, must be stretched)
     public TextMeshProUGUI label;
-    public SoundId? clickSound = SoundId.UIClick;
+    [System.NonSerialized] public SoundId? clickSound = SoundId.UIClick;
     public bool hoverSound = true;
     public float hoverScale = 1.04f, pressScale = 0.96f;
 

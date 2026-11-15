@@ -58,11 +58,11 @@ public class BattleSnapshot {
     public void Restore(Fortress keepCooldownsOf) {
         // Everything thrown or broken since then disappears: every projectile still in the world, also the spent
         // ones that linger (a flare burning on the ground, a dagger in the wall), not only those still flying.
-        foreach (Projectile p in Object.FindObjectsByType<Projectile>(FindObjectsSortMode.None)) if (p != null) Object.Destroy(p.gameObject);
+        foreach (Projectile p in Object.FindObjectsByType<Projectile>()) if (p != null) Object.Destroy(p.gameObject);
         Projectile.Active.Clear();
         foreach (KeyValuePair<TurnEffect, int> e in effects) if (e.Key != null) e.Key.RewindState = e.Value;
-        foreach (Debris d in Object.FindObjectsByType<Debris>(FindObjectsSortMode.None)) Object.Destroy(d.gameObject);
-        foreach (Embedded e in Object.FindObjectsByType<Embedded>(FindObjectsSortMode.None)) Object.Destroy(e.gameObject);
+        foreach (Debris d in Object.FindObjectsByType<Debris>()) Object.Destroy(d.gameObject);
+        foreach (Embedded e in Object.FindObjectsByType<Embedded>()) Object.Destroy(e.gameObject);
 
         foreach (FortressRecord r in records) {
             Fortress f = r.fortress;

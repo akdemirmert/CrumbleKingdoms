@@ -2,9 +2,10 @@ using System.Collections;
 using UnityEngine;
 
 // Mustache Birds: Dalí throws his waxed mustache. It splits into its two halves, which fly off as a pair of birds
-// drawn like a child draws them, a flat flapping "M" stroke (weaving around the aimed arc in mirror image), and
-// each bursts on contact in a small blast and a puff of black feathers. He stays bare-lipped until the start of
-// his next turn (MustacheRegrowth).
+// drawn like a child draws them, a flat flapping "M" stroke (weaving around the aimed arc in mirror image). Each
+// pecks its way through enemy blocks (def.pierce of wall each, like a piercing weapon's budget; every block it
+// passes takes def.damage), then bursts on the next thing it touches in a blast and a puff of black feathers.
+// He stays bare-lipped until the start of his next turn (MustacheRegrowth).
 public class MustacheBird : Projectile {
     const float Weave = 0.45f;              // metres either side of the aimed arc
     const float WeavesPerSecond = 1.4f;
@@ -16,6 +17,8 @@ public class MustacheBird : Projectile {
 
     int side = 1;                           // +1 / -1: the two halves weave in mirror image
     Vector3 arcPos, arcVel;                 // the plain ballistic arc the pair follows on average
+    SphereCollider body;
+    float pierceLeft;
     Transform visual;
     Mesh doodle;
     Vector3[] doodleVerts;
@@ -52,7 +55,9 @@ public class MustacheBird : Projectile {
         arcVel = velocity;
         flapPhase = side > 0 ? 0f : 0.5f;
         visual = BuildBird(transform, out doodle, out doodleVerts).transform;
-        gameObject.AddComponent<SphereCollider>().radius = Radius;
+        body = gameObject.AddComponent<SphereCollider>();
+        body.radius = Radius;
+        pierceLeft = def.pierce;
         AddBody(Mass, velocity, false);
         rb.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;   // the model turns, not the body
         trail = VFX.Trail(transform, new Color(0.85f, 0.88f, 0.95f, 0.35f), 0.12f, 0.3f);              // a pale streak of air
@@ -100,6 +105,16 @@ public class MustacheBird : Projectile {
         Vector3 p = c.contactCount > 0 ? c.GetContact(0).point : transform.position;
         p.z = 0f;
         RaiseImpact(p);
+        Block block = c.collider.GetComponentInParent<Block>();
+        if (block != null && block.IsAlive && pierceLeft >= block.def.pierceCost) {
+            // Pecks through: the block takes the hit and the bird flies on along its arc (FixedUpdate steers it back).
+            pierceLeft -= block.def.pierceCost;
+            Physics.IgnoreCollision(body, c.collider);
+            Hit(block, def.damage, DamageType.Pierce, p, owner, arcVel.normalized * 3f);
+            DaliFx.Feathers(p, 8, 3f);
+            SFX.Play(SoundId.Pierce, p, 0.45f, 1.3f);
+            return;
+        }
         Explosion.Create(p, def.radius, def.damage, def.force, owner, DamageType.Explosion, BlastStyle.Small);
         DaliFx.Feathers(p, 22, 5f);
         DaliSounds.Play(DaliSound.FeatherPop, p, 0.8f);

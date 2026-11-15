@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // Automated playtest (development aid, not part of normal play). Start the player with
-//   SiegeOfGods.exe -autotest <folder>
+//   CrumbleKingdoms.exe -autotest <folder>
 // It walks through the menu panels, fires every weapon in bot-vs-bot duels, plays one player turn
 // through the real aiming code, opens 1v2/1v3 campaign levels, saves screenshots and writes
 // report.txt (errors, exceptions, frame rate) into the folder, then quits.
@@ -19,6 +19,7 @@ public class AutoPlaytest : MonoBehaviour {
     readonly Dictionary<Fortress, int> turnsTaken = new Dictionary<Fortress, int>();
     bool impactSeen;
     bool forceSlots;
+    int benchSlot = -1;                     // slot the bots must use during the benchmark (-1 = their choice)
     BattleManager hooked;
     int lastCaptured;                       // turn number of the last captured turn
     string lastLabel;                       // that turn's shooter and weapon
@@ -80,11 +81,27 @@ public class AutoPlaytest : MonoBehaviour {
     }
 
     IEnumerator Start() {
-        StartCoroutine(Watchdog(Time.realtimeSinceStartup + 1500f));
-        TimeFX.Speed = 1.4f;
         // -quick: three duels (classes 0v1, 2v3, 4v5) fire every weapon once; skips the rest.
         // -only N: just the weapon duel of class N against class N+1.
+        // -bench T [-classes 3,5]: weapon damage benchmark (see Bench), T trials per weapon.
+        // -duels N [-classes 3,5]: full bot duels of those classes against every other class (see DuelSeries).
         string[] args = Environment.GetCommandLineArgs();
+        int bench = Array.IndexOf(args, "-bench"), duels = Array.IndexOf(args, "-duels");
+        StartCoroutine(Watchdog(Time.realtimeSinceStartup + (bench >= 0 || duels >= 0 ? 7200f : 1500f)));
+        TimeFX.Speed = 1.4f;
+        if (bench >= 0 || duels >= 0) {
+            int at = bench >= 0 ? bench : duels;
+            int count = at + 1 < args.Length && int.TryParse(args[at + 1], out int t0) ? Mathf.Clamp(t0, 1, 10) : 3;
+            List<int> classes = new List<int>();
+            int ci = Array.IndexOf(args, "-classes");
+            if (ci >= 0 && ci + 1 < args.Length)
+                foreach (string s in args[ci + 1].Split(',')) if (int.TryParse(s, out int c1) && c1 >= 0 && c1 < Classes.Count) classes.Add(c1);
+            if (classes.Count == 0) for (int c = 0; c < Classes.Count; c++) classes.Add(c);
+            yield return new WaitForSecondsRealtime(2f);
+            yield return bench >= 0 ? Bench(count, classes) : DuelSeries(count, classes);
+            Finish("done");
+            yield break;
+        }
         bool quick = Array.IndexOf(args, "-quick") >= 0;
         int only = Array.IndexOf(args, "-only");
         if (only >= 0 && only + 1 < args.Length && int.TryParse(args[only + 1], out int c0)) {
@@ -199,6 +216,100 @@ public class AutoPlaytest : MonoBehaviour {
         yield return new WaitForSeconds(0.4f);
         yield return Shot("c" + (level + 1).ToString("00") + "_1_overview");
         for (int t = 0; t < 2 && Alive(bm); t++) yield return CaptureTurn(bm, "c" + (level + 1).ToString("00"));
+    }
+
+    // Weapon damage benchmark: every aimed weapon of the given classes (not self-casts or the clocks) is thrown once,
+    // with a perfect throw and no wind, at a fresh Soldier keep, `trials` times on different layouts (the same layouts
+    // for every weapon). Notes the enemy commander's damage, the keep's integrity loss and the blocks it lost, measured
+    // when the target's turn starts, so the first flare of a painted sun counts (the anteater eats on Dalí's own turns,
+    // so it shows nothing here). A kill also counts the defeated keep's collapse in its integrity and blocks.
+    IEnumerator Bench(int trials, List<int> classes) {
+        AIProfile perfect = new AIProfile { skill = 1f, aimError = 0f, powerError = 0f, windSense = 1f, thinkTime = 0.2f };
+        foreach (int c in classes) {
+            for (int slot = 0; slot < 4; slot++) {
+                WeaponDef def = WeaponDefs.ForClass((HeroClass)c, slot);
+                if (def.selfCast || def.id == WeaponId.MeltingClocks) continue;
+                float hpSum = 0f, integritySum = 0f;
+                int lostSum = 0, kills = 0, runs = 0;
+                List<string> each = new List<string>();
+                for (int t = 0; t < trials; t++) {
+                    benchSlot = slot;
+                    GameSession.AutoPlay = true;
+                    GameSession.Mode = GameMode.Duel;
+                    GameSession.Duel = new DuelOptions {
+                        p1Class = (HeroClass)c, p2Class = HeroClass.Soldier, p2Controller = ControllerType.Bot, botDifficulty = 2,
+                        theme = ArenaTheme.Meadow, night = false, wind = false, seed = 200 + t, firstTeam = 0,
+                    };
+                    yield return LoadBattle(() => SceneFader.Load(GameSession.BattleScene));
+                    BattleManager bm = BattleManager.I;
+                    if (!Alive(bm) || bm.fortresses.Count < 2) { each.Add("no battle"); continue; }
+                    Fortress me = bm.fortresses[0], enemy = bm.fortresses[1];
+                    me.setup.ai = perfect;   // read when its first turn starts, after the intro
+                    TimeFX.Speed = 2.5f;
+                    yield return WaitFor(() => !Alive(bm) || (bm.State == BattleState.Aiming && bm.Current == me), 30f);
+                    if (!Alive(bm) || bm.Current != me) { each.Add("no turn"); continue; }
+                    float hp0 = enemy.commander.hp, integrity0 = enemy.Integrity;
+                    losses.Remove(enemy);
+                    yield return WaitFor(() => !Alive(bm) || bm.State == BattleState.Finished || (bm.State == BattleState.Aiming && bm.Current == enemy), 60f);
+                    if (!Alive(bm)) { each.Add("lost battle"); continue; }
+                    float hp = hp0 - (enemy.CommanderAlive ? enemy.commander.hp : 0f), integrity = (integrity0 - enemy.Integrity) * 100f;
+                    losses.TryGetValue(enemy, out int[] n);
+                    int lost = n != null ? n[0] + n[1] + n[2] : 0;
+                    runs++;
+                    hpSum += hp;
+                    integritySum += integrity;
+                    lostSum += lost;
+                    if (!enemy.CommanderAlive) kills++;
+                    each.Add(Mathf.RoundToInt(hp) + "/" + Mathf.RoundToInt(integrity) + "%/" + lost);
+                }
+                int k = Mathf.Max(1, runs);
+                notes.Add("BENCH " + ((HeroClass)c).ToString().PadRight(8) + def.id.ToString().PadRight(14) + " cd" + def.cooldown +
+                          "  commander -" + (hpSum / k).ToString("0").PadLeft(3) + "  integrity -" + (integritySum / k).ToString("0").PadLeft(2) +
+                          "%  blocks " + ((float)lostSum / k).ToString("0.0").PadLeft(4) + "  kills " + kills + "/" + runs +
+                          "   [" + string.Join("  ", each) + "]");
+            }
+        }
+        benchSlot = -1;
+        TimeFX.Speed = 1.4f;
+    }
+
+    // Full bot-vs-bot duels (both sides the same Hard bot, wind on, the arena changing) of each given class against
+    // every other class, `games` per pairing with the sides and the first throw alternating. Notes the wins per pairing;
+    // a duel still going after 40 turns counts as a draw.
+    IEnumerator DuelSeries(int games, List<int> classes) {
+        foreach (int c in classes) {
+            int won = 0, played = 0;
+            List<string> pairs = new List<string>();
+            for (int o = 0; o < Classes.Count; o++) {
+                if (o == c) continue;
+                int w = 0, l = 0, d = 0;
+                for (int g = 0; g < games; g++) {
+                    bool left = g % 2 == 0;   // which side this class plays
+                    GameSession.AutoPlay = true;
+                    GameSession.Mode = GameMode.Duel;
+                    GameSession.Duel = new DuelOptions {
+                        p1Class = (HeroClass)(left ? c : o), p2Class = (HeroClass)(left ? o : c), p2Controller = ControllerType.Bot, botDifficulty = 2,
+                        theme = (ArenaTheme)((c + o + g) % 5), night = false, wind = true, seed = 300 + 7 * g + o, firstTeam = (g / 2) % 2,
+                    };
+                    yield return LoadBattle(() => SceneFader.Load(GameSession.BattleScene));
+                    BattleManager bm = BattleManager.I;
+                    if (!Alive(bm)) continue;
+                    foreach (Fortress f in bm.fortresses) f.setup.ai = AIProfile.FromSkill(0.65f);
+                    TimeFX.Speed = 2.5f;
+                    yield return WaitFor(() => !Alive(bm) || bm.State == BattleState.Finished || bm.Turn > 40, 600f);
+                    if (!Alive(bm)) continue;
+                    if (bm.State != BattleState.Finished || bm.Winner == null) d++;
+                    else if (bm.Winner.id == (left ? 0 : 1)) w++;
+                    else l++;
+                }
+                won += w;
+                played += w + l + d;
+                pairs.Add(((HeroClass)o) + " " + w + "-" + l + (d > 0 ? " (" + d + " draw)" : ""));
+                notes.Add("  duels " + ((HeroClass)c) + " vs " + pairs[pairs.Count - 1]);   // kept if the watchdog stops the series
+            }
+            notes.Add("DUELS " + ((HeroClass)c).ToString().PadRight(8) + " won " + won + "/" + played + "   " + string.Join(", ", pairs));
+        }
+        TimeFX.Speed = 1.4f;
     }
 
     // ------------------------------------------------------------------ helpers
@@ -332,7 +443,7 @@ public class AutoPlaytest : MonoBehaviour {
     void OnTurnStarted(Fortress f) {
         turnsTaken.TryGetValue(f, out int n);
         turnsTaken[f] = n + 1;
-        GameSession.ForcedSlot = forceSlots ? n % 4 : -1;
+        GameSession.ForcedSlot = forceSlots ? n % 4 : benchSlot;
         WatchBlocks();   // blocks rebuilt by a time rewind are new
     }
 

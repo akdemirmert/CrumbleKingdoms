@@ -3,7 +3,8 @@ using UnityEngine;
 
 // Bat Swarm. A dark cloud of flapping bats flies along the aimed arc (VampireBatSwarm). It releases its bats on
 // a click (or the bot's hint), when it touches anything, or as soon as it comes within TriggerDistance of an
-// enemy fortress. Each bat (VampireBat) picks a nearby enemy block - now and then the enemy commander -
+// enemy fortress. Each bat (VampireBat) picks a nearby enemy block - now and then (two bats at most) the enemy
+// commander -
 // scatters for a moment, then dives at it with light homing, bites (def.damage, x1.5 on a commander) and
 // bursts into a puff. Every bat is a Projectile, so the turn waits for the last one; bats that find nothing
 // to bite flutter off and vanish.
@@ -13,7 +14,8 @@ public class VampireBatSwarm : Projectile {
     const float SweepRadius = 0.45f;
     const float TriggerDistance = 6f;      // releases this close to an enemy fortress
     const float TargetReach = 16f;         // the bats only go for blocks this close to the release point
-    const float CommanderChance = 0.3f;    // share of the bats that go for an enemy commander in reach
+    const float CommanderChance = 0.3f;    // share of the bats that go for an enemy commander in reach...
+    const int MaxCommanderBats = 2;        // ...but no more than this many per swarm (they bite through his walls)
     static readonly Collider[] near = new Collider[256];
 
     Transform cloud;
@@ -119,13 +121,15 @@ public class VampireBatSwarm : Projectile {
         List<Block> blocks = new List<Block>();
         List<Commander> commanders = new List<Commander>();
         FindTargets(at, blocks, commanders);
+        int onCommander = 0;
         for (int i = 0; i < bats.Length; i++) {
             Transform b = bats[i].transform;
             Vector3 from = new Vector3(b.position.x, b.position.y, 0f);
             Vector3 outward = from - at;
             if (outward.sqrMagnitude < 0.01f) outward = Random.insideUnitCircle;
             Vector3 velocity = manualVelocity * 0.35f + outward.normalized * Random.Range(4f, 7f);
-            Component target = PickTarget(blocks, commanders, at);
+            Component target = PickTarget(blocks, commanders, at, onCommander < MaxCommanderBats);
+            if (target is Commander) onCommander++;
             float depth = b.position.z, size = b.localScale.x;
             WeaponFactory.Spawn<VampireBat>("Bat", owner, def, from, velocity, bat => {
                 bat.target = target;
@@ -153,9 +157,10 @@ public class VampireBatSwarm : Projectile {
             if (f.CommanderAlive && Vector3.Distance(f.commander.AimPoint, at) < TargetReach + 4f) commanders.Add(f.commander);
     }
 
-    // A commander now and then, otherwise the nearest of three random blocks (bats go for what is close).
-    static Component PickTarget(List<Block> blocks, List<Commander> commanders, Vector3 at) {
-        if (commanders.Count > 0 && (blocks.Count == 0 || Random.value < CommanderChance))
+    // A commander now and then (while the swarm may still send one), otherwise the nearest of three random blocks
+    // (bats go for what is close); null when neither is in reach.
+    static Component PickTarget(List<Block> blocks, List<Commander> commanders, Vector3 at, bool commanderAllowed) {
+        if (commanderAllowed && commanders.Count > 0 && Random.value < CommanderChance)
             return commanders[Random.Range(0, commanders.Count)];
         Block best = null;
         float bestDistance = float.MaxValue;
@@ -180,12 +185,15 @@ public class VampireBatSwarm : Projectile {
 }
 
 // One bat of the swarm. It flies itself (no rigidbody): a short scatter, then a homing dive at its target; a
-// sphere sweep each step finds what it bites. Without a target it flutters upwards and vanishes.
+// sphere sweep each step finds what it bites. A bat going for a commander bites its way through the blocks in
+// front of him (CommanderPierce of wall, like a piercing weapon's budget). Without a target it flutters upwards
+// and vanishes.
 public class VampireBat : Projectile {
     const float Radius = 0.16f;
     const float ScatterTime = 0.32f;       // drifting out of the cloud before the dive
     const float DiveSpeed = 17f, Accel = 26f, TurnRate = 300f;   // m/s, m/s², degrees per second
     const float CommanderBonus = 1.5f;
+    const float CommanderPierce = 3.2f;    // two stone blocks or three wooden ones (BlockMatDef.pierceCost)
     const float FreeFlightTime = 1.2f;     // a bat with nothing to bite is gone after this
     const float RetargetReach = 3.5f;
     static readonly Collider[] near = new Collider[64];
@@ -197,13 +205,15 @@ public class VampireBat : Projectile {
     Transform model;
     bool hasTarget;
     Vector3 aim;
-    float roll, wobble, freeSince = -1f;
+    float roll, wobble, freeSince = -1f, pierceLeft;
+    readonly HashSet<Collider> bitten = new HashSet<Collider>();   // blocks it has bitten through
 
     public override bool CanActivate => false;
 
     protected override void OnLaunch(Vector3 velocity) {
         manualVelocity = velocity;
         maxLifetime = 5f;
+        pierceLeft = target is Commander ? CommanderPierce : 0f;
         model = ModelKit.Root("Model", transform).transform;
         model.localPosition = new Vector3(0f, 0f, Mathf.Clamp(depth, -0.6f, 0.6f));
         VampireBatRig rig = VampireKit.Bat(model, size);
@@ -222,7 +232,7 @@ public class VampireBat : Projectile {
         Vector3 p = transform.position;
         Vector3 v = Steer(manualVelocity, p, dt);
         Vector3 step = v * dt;
-        if (VampireKit.Sweep(this, p, Radius, step, out RaycastHit hit)) { Bite(hit, v); return; }
+        if (VampireKit.Sweep(this, p, Radius, step, out RaycastHit hit, bitten) && !BiteThrough(hit, v)) { Bite(hit, v); return; }
         manualVelocity = v;
         transform.position = p + step;
         if (transform.position.y < World.WaterY) { Splash(); return; }
@@ -271,13 +281,28 @@ public class VampireBat : Projectile {
         return best;
     }
 
-    // Whatever it flew into takes the bite (the ground only gets the puff).
+    // On its way to a living commander a bat bites through a block in front of him while it has budget left for it,
+    // and flies on.
+    bool BiteThrough(RaycastHit hit, Vector3 v) {
+        if (!(target is Commander cm) || cm == null || !cm.IsAlive) return false;
+        Block b = hit.collider.GetComponentInParent<Block>();
+        if (b == null || !b.IsAlive || pierceLeft < b.def.pierceCost) return false;
+        pierceLeft -= b.def.pierceCost;
+        bitten.Add(hit.collider);
+        Vector3 point = new Vector3(hit.point.x, hit.point.y, 0f);
+        Hit(b, def.damage, DamageType.Pierce, point, owner, v.normalized * 2f);
+        VFX.Sparks(point, VampireKit.BloodGlow, 4);
+        return true;
+    }
+
+    // Whatever it flew into takes the bite (the ground only gets the puff); a commander bitten without biting through
+    // a wall first takes CommanderBonus.
     void Bite(RaycastHit hit, Vector3 v) {
         Vector3 point = new Vector3(hit.point.x, hit.point.y, 0f);
         Collider col = hit.collider;
         if (col.gameObject.layer != Layers.Ground) {
             bool commander = col.GetComponentInParent<Commander>() != null;
-            Hit(col, def.damage * (commander ? CommanderBonus : 1f), DamageType.Pierce, point, owner, v.normalized * 2f);
+            Hit(col, def.damage * (commander && bitten.Count == 0 ? CommanderBonus : 1f), DamageType.Pierce, point, owner, v.normalized * 2f);
         }
         RaiseImpact(point);
         if (Time.time > lastBiteSound + 0.06f) {   // ten bites at once would drown everything else

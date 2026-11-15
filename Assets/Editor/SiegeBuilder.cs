@@ -13,7 +13,7 @@ using TMPro;
 
 // Builds the project from code: settings, fonts, base materials, the GameAssets asset, both scenes
 // and the Windows player. Everything else (meshes, textures, levels) is generated at runtime.
-// Menu: Siege of Gods > ...   Batch mode: -executeMethod SiegeBuilder.<Method>
+// Menu: Crumble Kingdoms > ...   Batch mode: -executeMethod SiegeBuilder.<Method>
 public static class SiegeBuilder {
     const string ART = "Assets/Art";
     const string FNT = "Assets/Fonts";
@@ -22,7 +22,7 @@ public static class SiegeBuilder {
     const string MenuScene = SCN + "/MainMenu.unity";
     const string BattleScene = SCN + "/Battle.unity";
 
-    [MenuItem("Siege of Gods/1. Set up project")]
+    [MenuItem("Crumble Kingdoms/1. Set up project")]
     public static void SetupProject() {
         foreach (string d in new[] { ART, FNT, RES, SCN }) Directory.CreateDirectory(d);
 
@@ -34,7 +34,7 @@ public static class SiegeBuilder {
         tm.ApplyModifiedPropertiesWithoutUndo();
 
         PlayerSettings.companyName = "Mert";
-        PlayerSettings.productName = "Siege of Gods";
+        PlayerSettings.productName = "Crumble Kingdoms";
         PlayerSettings.bundleVersion = "1.0.0";
         PlayerSettings.SplashScreen.show = false;
         PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
@@ -90,7 +90,7 @@ public static class SiegeBuilder {
     }
 
     // ------------------------------------------------------------------ assets
-    [MenuItem("Siege of Gods/2. Build assets")]
+    [MenuItem("Crumble Kingdoms/2. Build assets")]
     public static void BuildAssets() {
         foreach (string d in new[] { ART, RES }) Directory.CreateDirectory(d);
         GameAssets ga = AssetDatabase.LoadAssetAtPath<GameAssets>(RES + "/GameAssets.asset");
@@ -187,7 +187,7 @@ public static class SiegeBuilder {
     }
 
     // ------------------------------------------------------------------ scenes
-    [MenuItem("Siege of Gods/3. Build scenes")]
+    [MenuItem("Crumble Kingdoms/3. Build scenes")]
     public static void BuildScenes() {
         Directory.CreateDirectory(SCN);
         GameAssets ga = AssetDatabase.LoadAssetAtPath<GameAssets>(RES + "/GameAssets.asset");
@@ -259,11 +259,11 @@ public static class SiegeBuilder {
     }
 
     // ------------------------------------------------------------------ build
-    [MenuItem("Siege of Gods/4. Build Windows player")]
+    [MenuItem("Crumble Kingdoms/4. Build Windows player")]
     public static void BuildWindows() {
         BuildPlayerOptions o = new BuildPlayerOptions {
             scenes = new[] { MenuScene, BattleScene },
-            locationPathName = "Builds/Windows/SiegeOfGods.exe",
+            locationPathName = "Builds/Windows/CrumbleKingdoms.exe",
             target = BuildTarget.StandaloneWindows64,
             options = BuildOptions.None,
         };

@@ -25,7 +25,7 @@ public class MenuBackdrop : MonoBehaviour {
 
     void Build() {
         LevelDef level = LevelDefs.Levels[Mathf.Clamp(SaveData.UnlockedCount - 1, 0, LevelDefs.Count - 1)];
-        BattleSetup s = new BattleSetup { title = "Siege of Gods", subtitle = "", theme = level.theme, night = level.night, windMax = 0f };
+        BattleSetup s = new BattleSetup { title = "Crumble Kingdoms", subtitle = "", theme = level.theme, night = level.night, windMax = 0f };
         s.islands.Add(new IslandSpec(-31f, -9f, 0f));
         s.islands.Add(new IslandSpec(9f, 31f, 0f));
         HeroClass mine = SaveData.LastClass;

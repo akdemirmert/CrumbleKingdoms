@@ -7,7 +7,7 @@ using UnityEngine.Rendering;
 // DrainShare of his maximum health as Magic damage, and the blood flies back to the vampire in a stream
 // (VampireBloodStream) that heals him by what was really drained (nothing if a shield took the bite).
 public class VampireFang : PiercingProjectile {
-    const float DrainShare = 0.22f;
+    const float DrainShare = 0.3f;
     const float RollSpeed = 420f;          // deg/s: the fang turns about its length as it flies
 
     Transform roll;

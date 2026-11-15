@@ -96,16 +96,16 @@ public static class WeaponDefs {
             damage = 65, pierce = 99f, arc = ArcPreference.High, color = Hex("FFD24A") });
         // ---------------------------------------------------------------- Vampire
         Add(new WeaponDef { id = WeaponId.BatSwarm, name = "Bats", title = "Bat Swarm",
-            description = "A swarm of bats flies out and dives at the enemy's blocks and commander.",
+            description = "A swarm of bats dives at the enemy's blocks; the bats that go for the commander bite their way through his walls.",
             activateHint = "Click to RELEASE the bats",
             cooldown = 0, minSpeed = 14, maxSpeed = 34, gravityScale = 0.5f, windFactor = 0.6f,
             damage = 12, arc = ArcPreference.Any, color = Hex("8C2F45") });
         Add(new WeaponDef { id = WeaponId.VampireFang, name = "Fang", title = "Vampire Fang",
-            description = "A thrown fang. If it bites a commander it drains about a quarter of his health into yours.",
+            description = "A thrown fang that pierces up to five blocks (fewer stone or metal). If it bites a commander it drains 30% of his maximum health into yours.",
             cooldown = 1, minSpeed = 18, maxSpeed = 42, gravityScale = 0.6f, windFactor = 0.3f,
-            damage = 25, pierce = 1.5f, arc = ArcPreference.Low, color = Hex("EDE6D6") });
+            damage = 25, pierce = 5f, arc = ArcPreference.Low, color = Hex("EDE6D6") });
         Add(new WeaponDef { id = WeaponId.Candelabra, name = "Candelabra", title = "Burning Candelabra",
-            description = "A spinning candelabra: its three flames burst in fiery blasts and set wood alight.",
+            description = "A spinning candelabra smashes through two blocks, then its three flames burst in fiery blasts and set wood alight.",
             cooldown = 2, minSpeed = 14, maxSpeed = 34, gravityScale = 1f, windFactor = 0.7f,
             damage = 40, radius = 2.4f, force = 8, arc = ArcPreference.Any, color = Hex("FFB547") });
         Add(new WeaponDef { id = WeaponId.BloodCloak, name = "Cloak", title = "Blood Cloak",
@@ -132,9 +132,9 @@ public static class WeaponDefs {
             damage = 0, arc = ArcPreference.Any, color = Hex("5B47D6") });
         // ---------------------------------------------------------------- Dali
         Add(new WeaponDef { id = WeaponId.MustacheBirds, name = "Mustache", title = "Mustache Birds",
-            description = "His mustache flies off as two doodle birds that weave along the throw and burst. He is bare-lipped until it grows back.",
+            description = "His mustache flies off as two doodle birds that weave along the throw, peck through a block or two and burst. He is bare-lipped until it grows back.",
             cooldown = 0, minSpeed = 14, maxSpeed = 34, gravityScale = 0.55f, windFactor = 0.7f,
-            damage = 22, radius = 1.6f, force = 6, arc = ArcPreference.Any, color = Hex("3A2E2A") });
+            damage = 30, radius = 2.1f, force = 8, pierce = 2f, arc = ArcPreference.Any, color = Hex("3A2E2A") });
         Add(new WeaponDef { id = WeaponId.Anteater, name = "Anteater", title = "Pet Anteater",
             description = "Burrows under the enemy fortress and eats one block from below at the start of each of your turns (4 turns).",
             cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 1f, windFactor = 0.2f,
@@ -145,9 +145,9 @@ public static class WeaponDefs {
             cooldown = 4, minSpeed = 12, maxSpeed = 30, gravityScale = 0.8f, windFactor = 0.5f,
             damage = 0, arc = ArcPreference.Any, color = Hex("E9C46A") });
         Add(new WeaponDef { id = WeaponId.PaintedSun, name = "Sun", title = "Painted Sun",
-            description = "Bathes the battle in painted sunshine: a shaft of sunlight burns the enemy commander for 6-10 every turn (4 turns).",
+            description = "Bathes the battle in painted sunshine: a shaft of sunlight burns the enemy commander for 9-13 every turn (4 turns).",
             cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 0.9f, windFactor = 0.6f,
-            damage = 8, arc = ArcPreference.High, color = Hex("FFC93C") });
+            damage = 11, arc = ArcPreference.High, color = Hex("FFC93C") });
     }
 
     static void Add(WeaponDef d) {

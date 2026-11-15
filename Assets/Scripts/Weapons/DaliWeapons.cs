@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 
 // Dalí's weapons: surrealist art thrown at the enemy. Each weapon lives in its own file:
-//   DaliWeaponsMustache.cs  Mustache Birds: the halves of his mustache fly off as two birds and burst on contact
+//   DaliWeaponsMustache.cs  Mustache Birds: the halves of his mustache fly off as two birds that peck through blocks and burst
 //   DaliWeaponsAnteater.cs  Pet Anteater: burrows to the enemy and eats one block from below on each of his turns
 //   DaliWeaponsClocks.cs    Melting Clocks: time melts and the battle rewinds to before the enemy's last move
 //   DaliWeaponsSun.cs       Painted Sun: a sun painted over the enemy burns their commander every turn

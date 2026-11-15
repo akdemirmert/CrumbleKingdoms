@@ -9,7 +9,7 @@ public abstract class Projectile : MonoBehaviour {
     public static readonly List<Projectile> Active = new List<Projectile>();
     public static event Action<Projectile, Vector3> AnyImpact;
 
-    public WeaponDef def;
+    [System.NonSerialized] public WeaponDef def;
     public Fortress owner;
     public Rigidbody rb;                 // null for kinematic/manual projectiles
     public float gravityScale = 1f;

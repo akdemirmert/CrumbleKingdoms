@@ -29,10 +29,10 @@ public class Team {
 }
 
 public class Fortress : MonoBehaviour {
-    public FortressSetup setup;
+    [System.NonSerialized] public FortressSetup setup;
     public int index;
-    public Team team;
-    public FortressBlueprint blueprint;
+    [System.NonSerialized] public Team team;
+    [System.NonSerialized] public FortressBlueprint blueprint;
     public Commander commander;
     public readonly List<Block> blocks = new List<Block>();
     public float initialHP;

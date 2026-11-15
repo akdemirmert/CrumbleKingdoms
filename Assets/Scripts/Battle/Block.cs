@@ -66,7 +66,7 @@ public static class PhysMats {
 [DisallowMultipleComponent]
 public class Block : MonoBehaviour, IDamageable {
     public BlockMaterial material;
-    public BlockMatDef def;
+    [System.NonSerialized] public BlockMatDef def;
     public HeroClass skin;          // visual style of the owner's class
     public Vector3 size;
     public float maxHP, hp;

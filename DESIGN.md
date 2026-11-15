@@ -1,6 +1,6 @@
-# Siege of Gods — Design & Technical Spec
+# Crumble Kingdoms — Design & Technical Spec
 
-A turn-based physics artillery game (Unity 6.3, URP, Input System). Two or more fortresses
+A turn-based physics artillery game (Unity 6.6, URP, Input System). Two or more fortresses
 stand on islands across the sea; each fortress has a **Commander** and one of six classes with
 **four weapons**. Players take turns hurling weapons that hook, pierce, explode, rain meteors, call
 lightning, pull blocks into a black hole, beam them up or blow towers over with a shockwave.
@@ -58,18 +58,18 @@ levels, game state management.
 | God | 2 | Mjolnir | Thor's hammer: heavy, smashes through, calls **lightning + shockwave** on impact, then **flies back** to Thor. |
 | God | 3 | Gjallarhorn | Heimdall's horn: on impact or **click** a rainbow **shockwave** throws blocks away and shatters glass/ice. |
 | God | 4 | Gungnir | Odin's spear: **homes** onto the nearest enemy commander after the apex and **pierces everything**. |
-| Vampire | 1 | BatSwarm | On **click** (or impact) a swarm of bats is released; they dive at enemy blocks and the commander. |
-| Vampire | 2 | VampireFang | A thrown fang; a bite on a commander drains 22 % of his maximum health into the vampire. |
-| Vampire | 3 | Candelabra | A spinning candelabra whose three flames burst in **fire blasts** and set wood alight. |
+| Vampire | 1 | BatSwarm | On **click** (or impact) a swarm of bats is released; they dive at enemy blocks and the commander; the bats going for the commander bite through up to 3.2 of wall (pierce budget). |
+| Vampire | 2 | VampireFang | A thrown fang that **pierces** up to five blocks (pierce budget 5); a bite on a commander drains 30 % of his maximum health into the vampire. |
+| Vampire | 3 | Candelabra | A spinning candelabra that **smashes through** the first two blocks it meets (they take its fire damage and wooden ones catch fire), then its three flames burst in **fire blasts** and set wood alight. |
 | Vampire | 4 | BloodCloak | **Self-cast**: a cloak over the vampire's chamber absorbs every hit on him for one enemy turn (the first that hits it), or lasts two of his turns. |
 | Alien | 1 | Ufo | A saucer; on **click** it stops and hovers, and a **tractor beam** abducts up to three free blocks (and exposed commanders). |
 | Alien | 2 | RayGun | A straight laser bolt: no arc, no wind; burns through up to five blocks (pierce budget 5). |
 | Alien | 3 | Cow | A heavy, bouncy flying cow that breaks through blocks and flattens what it lands on. |
 | Alien | 4 | SpaceWarp | **Self-cast**: two rounds of low gravity (×0.45) and enemy throws lose a quarter of their power. |
-| Dalí | 1 | MustacheBirds | His mustache splits into two flat "M" doodle birds weaving along the aimed arc; each bursts in a small blast. It grows back at the start of his next turn. |
+| Dalí | 1 | MustacheBirds | His mustache splits into two flat "M" doodle birds weaving along the aimed arc; each **pecks through** up to 2 of wall (pierce budget) and then bursts in a blast. It grows back at the start of his next turn. |
 | Dalí | 2 | Anteater | Burrows to the enemy fortress and **eats one bottom block** at the start of each of Dalí's turns (four meals). |
 | Dalí | 3 | MeltingClocks | On **click** (or impact) time melts: the battle is **rewound** to the start of the previous turn (`BattleSnapshot`) and Dalí plays again. |
-| Dalí | 4 | PaintedSun | The arena lights up in painted sunshine; at the start of each of the target's next four turns a shaft of sunlight burns its commander for 6–10 and lights a wooden block. |
+| Dalí | 4 | PaintedSun | The arena lights up in painted sunshine; at the start of each of the target's next four turns a shaft of sunlight burns its commander for 9–13 and lights a wooden block. |
 
 Numbers live in `WeaponDefs` (Scripts/Core/Defs.cs) — the single source of truth.
 
@@ -114,8 +114,8 @@ any arena, day or night, wind on/off.
 | Editor | SiegeBuilder (project settings, fonts, base materials, GameAssets, scenes, Windows build), PhysicsProbe (fortress stability check) |
 
 ### Rules for all code
-* C# 9, Unity 6000.3 API: `Rigidbody.linearVelocity`, `linearDamping`, `PhysicsMaterial`,
-  `FindAnyObjectByType`, `FindObjectsByType(FindObjectsSortMode.None)`, TMP `textWrappingMode`.
+* C# 9, Unity 6000.6 API: `Rigidbody.linearVelocity`, `linearDamping`, `PhysicsMaterial`,
+  `FindAnyObjectByType`, `FindObjectsByType<T>()`, `GetEntityId()`, TMP `textWrappingMode`.
 * Input **only** through `UnityEngine.InputSystem` (`Mouse.current`, `Keyboard.current`);
   the legacy `Input` class throws in this project.
 * **Never `Shader.Find` at runtime.** Materials come from `Mats` (copies of base materials in
