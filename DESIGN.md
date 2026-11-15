@@ -1,0 +1,126 @@
+# Siege of Gods — Design & Technical Spec
+
+A turn-based physics artillery game (Unity 6.3, URP, Input System). Two or more fortresses
+stand on islands across the sea; each fortress has a **Commander** and one of six classes with
+**four weapons**. Players take turns hurling weapons that hook, pierce, explode, rain meteors, call
+lightning, pull blocks into a black hole, beam them up or blow towers over with a shockwave.
+Fortresses are built from physical blocks (wood, stone, metal, glass, ice, powder kegs) that crack,
+break into debris and topple.
+
+Course brief (IGDPD, Mission Demolition chapter): physics, collisions, mouse interaction,
+levels, game state management.
+
+---------------------------------------------------------------------------------------------
+## 1. Game rules
+
+* **Turn order**: teams alternate (player, enemy, player, ...). Inside a team the alive
+  fortresses take turns in rotation, so a 1v3 battle is player → enemy A → player → enemy B ...
+* **Aiming (mouse)**: press the left button anywhere on the battlefield, drag back like a
+  slingshot, release to fire. Drag direction = launch direction (reversed), drag length = power.
+  A dotted preview shows the first ~1 s of the arc (gravity only — wind is the player's job).
+  Right click / Esc cancels a drag. Keyboard: ←/→ angle, ↑/↓ power, Space/Enter fire, 1–4 weapon.
+* **Mid-air activation**: some weapons react to a left click while flying (bomb detonates,
+  drone blows up, lightning strikes, meteor/void open early, Heimdall's horn blows, the bats are
+  released, the UFO stops to hover, the clocks melt time). The Soldier's drone also follows the
+  mouse cursor while it flies. Blood Cloak and Space Warp are cast on yourself: one click, no aim.
+* **Wind**: a new horizontal wind (acceleration, m/s²) each turn; each weapon has a wind factor.
+* **Cooldowns**: slot 1 has none; other slots have 1–4 turns (counted on the owner's turns).
+* **Defeat** of a fortress: only when its Commander dies (HP 0, crushed, burned, or falls into the
+  sea). A ruined fortress does not lose by itself — it just leaves the commander exposed. A defeated
+  fortress collapses (remaining blocks crumble).
+* **Who starts**: in the campaign the player throws first; in a duel a coin toss decides, and a
+  rematch lets the other side start.
+* **Victory**: the last team with an undefeated fortress wins.
+* **Protected commanders**: every commander stands inside a walled, roofed chamber of his
+  fortress and throws from above its roof. Every intact block between a blast and a commander
+  lets only 40 % of the blast through (`Explosion.Cover`), so a fortress must be opened up
+  (or pierced, or struck from above) before its commander can be killed. Fortresses are built
+  to survive several hits: sturdy blocks, thick lower pillars, interlocking courses.
+* **Class identity**: a fortress and its commander show their class at a glance — Soldier:
+  granite, iron and oak, crenellations, banners; Wizard: rune-carved slate, violet glass,
+  pointed roofs, floating crystals; God: white marble and gold, columns, golden roofs. The Vampire,
+  Alien and Dalí bring their own skins, decorations and commanders (`ClassLooks`).
+  Physics is identical across skins; the team colour appears only on flags and small accents.
+
+## 2. Classes and weapons (WeaponId order is fixed)
+
+| Class | Slot | WeaponId | Behaviour |
+|---|---|---|---|
+| Soldier | 1 | GrapplingHook | A hook on a rope. It **latches onto** the first enemy block (or commander) it hits and **yanks it out** towards the thrower, tearing the wall apart; then it reels back in. |
+| Soldier | 2 | Bomb | Bouncing fuse bomb (3.2 s) — **click to detonate**. Big explosion, radial force. |
+| Soldier | 3 | Drone | Kamikaze quadcopter: after the toss it **flies to the mouse cursor** (bots fly it at the commander) for a few seconds; **click to blow it up**, it also explodes on contact. |
+| Soldier | 4 | Airstrike | A red smoke flare marks the spot; a **bomber** flies over and drops a row of five bombs across it. |
+| Wizard | 1 | Fireball | Explodes on contact and **sets wood on fire** (burning spreads to touching wood). |
+| Wizard | 2 | Lightning | Charged orb; on impact or **click** a bolt strikes from the sky down that column and **chains** to nearby metal / commanders. |
+| Wizard | 3 | MeteorOrb | On impact or **click** opens a sky portal: a **meteor shower** of 7 burning rocks. |
+| Wizard | 4 | VoidOrb | On impact or **click** spawns a **black hole** that pulls and crushes blocks, then bursts. |
+| God | 1 | LokiDaggers | Loki throws **4 daggers** — one real + 3 illusions in a fan; each pierces 2 blocks. |
+| God | 2 | Mjolnir | Thor's hammer: heavy, smashes through, calls **lightning + shockwave** on impact, then **flies back** to Thor. |
+| God | 3 | Gjallarhorn | Heimdall's horn: on impact or **click** a rainbow **shockwave** throws blocks away and shatters glass/ice. |
+| God | 4 | Gungnir | Odin's spear: **homes** onto the nearest enemy commander after the apex and **pierces everything**. |
+| Vampire | 1 | BatSwarm | On **click** (or impact) a swarm of bats is released; they dive at enemy blocks and the commander. |
+| Vampire | 2 | VampireFang | A thrown fang; a bite on a commander drains 22 % of his maximum health into the vampire. |
+| Vampire | 3 | Candelabra | A spinning candelabra whose three flames burst in **fire blasts** and set wood alight. |
+| Vampire | 4 | BloodCloak | **Self-cast**: a cloak over the vampire's chamber absorbs every hit on him for one enemy turn (the first that hits it), or lasts two of his turns. |
+| Alien | 1 | Ufo | A saucer; on **click** it stops and hovers, and a **tractor beam** abducts up to three free blocks (and exposed commanders). |
+| Alien | 2 | RayGun | A straight laser bolt: no arc, no wind; burns through up to five blocks (pierce budget 5). |
+| Alien | 3 | Cow | A heavy, bouncy flying cow that breaks through blocks and flattens what it lands on. |
+| Alien | 4 | SpaceWarp | **Self-cast**: two rounds of low gravity (×0.45) and enemy throws lose a quarter of their power. |
+| Dalí | 1 | MustacheBirds | His mustache splits into two flat "M" doodle birds weaving along the aimed arc; each bursts in a small blast. It grows back at the start of his next turn. |
+| Dalí | 2 | Anteater | Burrows to the enemy fortress and **eats one bottom block** at the start of each of Dalí's turns (four meals). |
+| Dalí | 3 | MeltingClocks | On **click** (or impact) time melts: the battle is **rewound** to the start of the previous turn (`BattleSnapshot`) and Dalí plays again. |
+| Dalí | 4 | PaintedSun | The arena lights up in painted sunshine; at the start of each of the target's next four turns a shaft of sunlight burns its commander for 6–10 and lights a wooden block. |
+
+Numbers live in `WeaponDefs` (Scripts/Core/Defs.cs) — the single source of truth.
+
+## 3. Campaign (10 levels)
+
+Bot accuracy rises with the level and **inside a battle** (the bot learns from its last miss).
+Levels 1–3 are 1v1, 4–7 are 1v2 (the second enemy fortress stands on a higher cliff behind the
+first — "stacked"), 8–10 are 1v3 (the maximum). Themes: Meadow, Desert, Frost, Volcano, Asgard.
+Stars: 1–3 by the average of the commander's health and the fortress's integrity at the end
+(70 % or more = 3, 40 % or more = 2, otherwise 1). Progress is saved (PlayerPrefs).
+
+**Duel (1v1)**: Player 1 vs Player 2 (hot-seat) or vs Bot (Easy/Normal/Hard/Brutal), any classes,
+any arena, day or night, wind on/off.
+
+---------------------------------------------------------------------------------------------
+## 4. World conventions
+
+* Gameplay plane z = 0. +x = right. Player / Player 1 on the left, facing +1.
+* `World.Gravity` = 14 m/s² (Physics.gravity set at boot). Fixed step 1/60 s.
+* Island tops are at y = 0 or higher; sea surface `World.WaterY` = -5; anything below
+  `World.KillY` = -7 is lost (blocks count as destroyed, commanders die, projectiles end).
+* Blocks: depth (z) `World.BlockDepth` = 1.6 m. Rigidbodies of blocks and commanders are
+  constrained to the plane (freeze position Z, rotation X and Y). Debris is free 3D.
+* Layers (`Layers` class): Ground 8, Block 9, Projectile 10, Debris 11, Commander 12, Effect 13,
+  IconStage 14. Projectile↔Projectile, Projectile↔Debris, Debris↔Debris, Debris↔Commander and
+  everything↔Effect do **not** collide (set at boot).
+* Projectiles never collide with their own team's blocks and commanders.
+
+## 5. Code map (Assets/Scripts)
+
+| Folder | Files |
+|---|---|
+| Core | Enums, Defs (WeaponDefs, ClassDefs), LevelDefs (+BattleSetup), GameSession, SaveData, GameSettings, GameAssets, Boot |
+| Battle | BattleManager, Team, Fortress, Commander, Block, Debris, TurnActor, Damage (DamageInfo, IDamageable), Explosion, Ballistics, HumanShotController, BotShotController, BattleCamera, TimeFX |
+| Weapons | Projectile (base), PiercingProjectile (shared pierce), WeaponFactory; files per class |
+| FX | VFX (particles, flashes, rings, floating text), LightningBolt, ScreenFlash |
+| Audio | SFX (SoundId, synthesis, pooled playback), Music |
+| World | ArenaBuilder (terrain, sky, sea, background per theme), FortressGenerator (blueprints), CommanderModel, ClassSkins, ClassLooks + Vampire/Alien/Dalí looks |
+| UI | UIKit (helpers), MainMenuUI, BattleHUD, IconRenderer |
+| Util | Mats (runtime material cache), MeshKit (boxes with metre UVs, rocks, cones), ModelKit (primitive parts), TexKit (procedural textures) |
+| Debug | AutoPlaytest (`-autotest <dir>` screenshots) |
+| Editor | SiegeBuilder (project settings, fonts, base materials, GameAssets, scenes, Windows build), PhysicsProbe (fortress stability check) |
+
+### Rules for all code
+* C# 9, Unity 6000.3 API: `Rigidbody.linearVelocity`, `linearDamping`, `PhysicsMaterial`,
+  `FindAnyObjectByType`, `FindObjectsByType(FindObjectsSortMode.None)`, TMP `textWrappingMode`.
+* Input **only** through `UnityEngine.InputSystem` (`Mouse.current`, `Keyboard.current`);
+  the legacy `Input` class throws in this project.
+* **Never `Shader.Find` at runtime.** Materials come from `Mats` (copies of base materials in
+  `GameAssets`), textures from `TexKit`, meshes from `MeshKit` / `ModelKit`.
+* Visual-only parts must have **no colliders** (use `ModelKit.Part`, which strips them).
+* Anything that must finish before the turn ends adds a `TurnActor` component and removes it
+  (or destroys its GameObject) when done. The turn also has a hard timeout.
+* No namespaces (textbook style). Keep classes small; no speculative abstractions.

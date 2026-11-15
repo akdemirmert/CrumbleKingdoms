@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 549be85a9d0f0d248bb2c9d27d955f2b, type: 3}
+  m_Name: GameAssets
+  m_EditorClassIdentifier: Assembly-CSharp::GameAssets
+  fontBold: {fileID: 11400000, guid: 0e3055ce1264ebe4a951c2fa731d228c, type: 2}
+  fontMedium: {fileID: 11400000, guid: 4424cf98c1395f0449f31a8a8d9ec80c, type: 2}
+  fontBoldOutline: {fileID: 2100000, guid: d5a2e02c29ac7e64b89b9a2814bbdb94, type: 2}
+  fontMediumOutline: {fileID: 2100000, guid: 8388aed8d0ce56c4a97ebb09f51be392, type: 2}
+  litOpaque: {fileID: 2100000, guid: 100aa08556613534a9df81feb6561ad3, type: 2}
+  litEmissive: {fileID: 2100000, guid: 1b1895fc4bf08c046a71f60faa6accbc, type: 2}
+  litTransparent: {fileID: 2100000, guid: 62449870b7133e744a92af90812c2f68, type: 2}
+  unlitOpaque: {fileID: 2100000, guid: 1f8d919e1cdd32e46830b6f0b84a9240, type: 2}
+  unlitTransparent: {fileID: 2100000, guid: a213fcb0e204c8e43be0c24c894bca5e, type: 2}
+  particleAdditive: {fileID: 2100000, guid: 0d1e47cb87e7a7c4d9a41bf27332f80a, type: 2}
+  particleAlpha: {fileID: 2100000, guid: de7afbce3f6e0394d9de15ac324063ad, type: 2}
+  postProfile: {fileID: 11400000, guid: bee10b23b904eab43a9486af697da53a, type: 2}
