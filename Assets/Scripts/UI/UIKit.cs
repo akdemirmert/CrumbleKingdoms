@@ -23,6 +23,107 @@ public static class UIKit {
     public static readonly Color Good = WeaponDefs.Hex("4CD38A");
     public static readonly Color Disabled = new Color(0.3f, 0.32f, 0.38f, 1f);
 
+    // Accent of the glassy panels (rim, star grid, glow). The menu uses the cool default; the battle HUD takes the
+    // colour of the planet being fought on (BattleHUD sets it, MainMenuUI resets it).
+    public static readonly Color DefaultAccent = WeaponDefs.Hex("8FB4FF");
+    public static Color Accent = DefaultAccent;
+    // The accent the buttons follow while the menu flies between places (blue at the title, amber at the observatory...).
+    public static Color LiveAccent = DefaultAccent;
+    public static readonly Color GlassFill = new Color(0.07f, 0.11f, 0.22f, 0.78f);
+
+    // ---- holographic button shapes: angled corners (top-left and bottom-right cut deep), 9-sliced
+    const int HoloN = 64, HoloBorder = 16;
+    static Sprite holoFill, holoOutline, holoBracket;
+
+    static float HoloCoverage(int px, int py, float k) {
+        float sum = 0f;
+        for (int sy = 0; sy < 3; sy++)
+            for (int sx = 0; sx < 3; sx++) {
+                float x = px + (sx + 0.5f) / 3f, y = py + (sy + 0.5f) / 3f, d = k * 1.4142f;
+                bool inside = x >= k && x <= HoloN - k && y >= k && y <= HoloN - k
+                           && x + (HoloN - y) >= 14f + d && (HoloN - x) + y >= 14f + d
+                           && (HoloN - x) + (HoloN - y) >= 4f + d && x + y >= 4f + d;
+                if (inside) sum += 1f / 9f;
+            }
+        return sum;
+    }
+
+    static Sprite HoloSprite(bool outline) {
+        Texture2D t = new Texture2D(HoloN, HoloN, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = outline ? "HoloOutline" : "HoloFill" };
+        Color[] px = new Color[HoloN * HoloN];
+        for (int y = 0; y < HoloN; y++)
+            for (int x = 0; x < HoloN; x++) {
+                float a = outline ? Mathf.Clamp01(HoloCoverage(x, y, 0f) - HoloCoverage(x, y, 2.2f)) : HoloCoverage(x, y, 0f);
+                px[y * HoloN + x] = new Color(1f, 1f, 1f, a);
+            }
+        t.SetPixels(px);
+        t.Apply();
+        return Sprite.Create(t, new Rect(0f, 0f, HoloN, HoloN), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect,
+                             new Vector4(HoloBorder, HoloBorder, HoloBorder, HoloBorder));
+    }
+
+    static Sprite HoloFill => holoFill != null ? holoFill : (holoFill = HoloSprite(false));
+    static Sprite HoloOutline => holoOutline != null ? holoOutline : (holoOutline = HoloSprite(true));
+
+    // Small L-shaped corner bracket (bottom-left; the other corner is this one rotated by 180 degrees).
+    static Sprite HoloBracket {
+        get {
+            if (holoBracket != null) return holoBracket;
+            const int N = 16;
+            Texture2D t = new Texture2D(N, N, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "HoloBracket" };
+            Color[] px = new Color[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                    px[y * N + x] = new Color(1f, 1f, 1f, (x < 3 && y < 13) || (y < 3 && x < 13) ? 1f : 0f);
+            t.SetPixels(px);
+            t.Apply();
+            holoBracket = Sprite.Create(t, new Rect(0f, 0f, N, N), new Vector2(0.5f, 0.5f), 100f);
+            return holoBracket;
+        }
+    }
+
+    public static Color AccentFor(ArenaTheme theme, bool night) {
+        Color c = Lighten(ThemeColor(theme), 0.2f);
+        return night ? Color.Lerp(c, WeaponDefs.Hex("9FB4FF"), 0.35f) : c;
+    }
+
+    // Faint field of tiny stars, tiled over panels.
+    static Sprite starGrid;
+    static Sprite StarGrid {
+        get {
+            if (starGrid != null) return starGrid;
+            const int N = 32;
+            Texture2D t = new Texture2D(N, N, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Bilinear, name = "UIStarGrid" };
+            Color[] px = new Color[N * N];
+            for (int i = 0; i < px.Length; i++) px[i] = new Color(1f, 1f, 1f, 0f);
+            Vector3[] dots = { new Vector3(8f, 8f, 1.4f), new Vector3(24f, 20f, 1f), new Vector3(15f, 27f, 0.8f) };
+            foreach (Vector3 d in dots)
+                for (int y = 0; y < N; y++)
+                    for (int x = 0; x < N; x++) {
+                        float a = Mathf.Clamp01(1f - Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(d.x, d.y)) / d.z);
+                        if (a > px[y * N + x].a) px[y * N + x] = new Color(1f, 1f, 1f, a);
+                    }
+            t.SetPixels(px);
+            t.Apply();
+            starGrid = Sprite.Create(t, new Rect(0f, 0f, N, N), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            return starGrid;
+        }
+    }
+
+    // Vertical colour ramp (bottom -> top), e.g. a shade behind the level cards.
+    public static Sprite VerticalGradient(Color bottom, Color top) {
+        Texture2D t = new Texture2D(2, 64, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "UIGradient" };
+        Color[] px = new Color[2 * 64];
+        for (int y = 0; y < 64; y++) {
+            Color c = Color.Lerp(bottom, top, y / 63f);
+            px[y * 2] = c;
+            px[y * 2 + 1] = c;
+        }
+        t.SetPixels(px);
+        t.Apply();
+        return Sprite.Create(t, new Rect(0f, 0f, 2f, 64f), new Vector2(0.5f, 0.5f), 100f);
+    }
+
     public const int UILayer = 5;
 
     // ------------------------------------------------------------------ sprites (generated once)
@@ -140,10 +241,22 @@ public static class UIKit {
         if (shadow) {
             Image s = Img(root, Shadow, new Color(0f, 0f, 0f, 0.55f), "Shadow");
             s.rectTransform.Fill(-30f, -38f, -30f, -22f);
+            Img(root, Shadow, Alpha(Accent, 0.10f), "AccentGlow").rectTransform.Fill(-16f, -16f, -16f, -16f);
         }
         background = RoundedImg(root, color, radius, "Background");
         background.rectTransform.Fill();
-        Image rim = Img(root, Outline, new Color(1f, 1f, 1f, 0.07f), "Rim");
+        // holographic glass: a faint star grid, a lighter upper half and a thin glowing rim in the accent colour
+        float inset = Mathf.Max(6f, radius * 0.3f);
+        Image stars = Img(root, StarGrid, Alpha(Accent, 0.07f), "StarGrid");
+        stars.type = Image.Type.Tiled;
+        stars.pixelsPerUnitMultiplier = 0.7f;
+        stars.rectTransform.Fill(inset, inset, inset, inset);
+        Image glass = RoundedImg(root, new Color(1f, 1f, 1f, 0.035f), radius, "Glass");
+        glass.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+        glass.rectTransform.anchorMax = Vector2.one;
+        glass.rectTransform.offsetMin = new Vector2(3f, 0f);
+        glass.rectTransform.offsetMax = new Vector2(-3f, -3f);
+        Image rim = Img(root, Outline, Alpha(Accent, 0.34f), "Rim");
         rim.pixelsPerUnitMultiplier = background.pixelsPerUnitMultiplier;
         rim.rectTransform.Fill();
         return root;
@@ -213,25 +326,39 @@ public static class UIKit {
     }
 
     // Chunky game button: coloured face over a darker "lip", a sheen on top, bold label.
+    // Holographic button: a glass plate with angled corners, a thin glowing outline, corner brackets and a scan line
+    // that sweeps across on hover. The glow follows LiveAccent (HoloSkin), so buttons take the colour of the place the
+    // menu camera is at. Primary = brighter filled glass, Ghost = barely there, Danger = red.
     public static UIButton Button(Transform parent, string text, ButtonStyle style, Action onClick, Vector2 size, float fontSize = 32f) {
         RectTransform root = Rect(parent, "Button " + text);
         root.sizeDelta = size;
         root.Size(size.x, size.y);
-        Color c = StyleColor(style);
-        float radius = Mathf.Min(18f, size.y * 0.3f);
+        bool primary = style == ButtonStyle.Primary, ghost = style == ButtonStyle.Ghost, danger = style == ButtonStyle.Danger;
+        Color acc = danger ? Danger : LiveAccent;
+        Color fill = primary ? Alpha(Color.Lerp(acc, Color.black, 0.5f), 0.92f)
+                   : danger ? Alpha(Color.Lerp(Danger, Color.black, 0.55f), 0.85f)
+                   : ghost ? Alpha(GlassFill, 0.4f) : GlassFill;
 
-        Image lip = RoundedImg(root, Darken(c, 0.45f), radius, "Lip");
-        lip.rectTransform.Fill(0f, -6f, 0f, 6f);
-        Image face = RoundedImg(root, c, radius, "Face");
+        Image glow = Img(root, Shadow, Alpha(acc, 0.14f), "Glow");
+        glow.rectTransform.Fill(-18f, -18f, -18f, -18f);
+        Image face = Img(root, HoloFill, fill, "Face");
+        face.type = Image.Type.Sliced;
+        face.pixelsPerUnitMultiplier = 1f;
         face.rectTransform.Fill();
         face.raycastTarget = true;
-        Image sheen = RoundedImg(face.transform, new Color(1f, 1f, 1f, style == ButtonStyle.Ghost ? 0.03f : 0.12f), radius, "Sheen");
-        sheen.rectTransform.anchorMin = new Vector2(0f, 0.5f);
-        sheen.rectTransform.anchorMax = Vector2.one;
-        sheen.rectTransform.offsetMin = new Vector2(3f, 0f);
-        sheen.rectTransform.offsetMax = new Vector2(-3f, -3f);
+        Image outline = Img(face.transform, HoloOutline, Alpha(acc, 0.8f), "Outline");
+        outline.type = Image.Type.Sliced;
+        outline.pixelsPerUnitMultiplier = 1f;
+        outline.rectTransform.Fill();
+        Image b1 = Img(face.transform, HoloBracket, Lighten(acc, 0.5f), "Bracket");
+        b1.rectTransform.Place(new Vector2(0f, 0f), new Vector2(-1f, -1f), new Vector2(16f, 16f)).pivot = new Vector2(0f, 0f);
+        Image b2 = Img(face.transform, HoloBracket, Lighten(acc, 0.5f), "Bracket");
+        RectTransform r2 = b2.rectTransform.Place(new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(16f, 16f));
+        r2.pivot = new Vector2(1f, 1f);
+        r2.localEulerAngles = new Vector3(0f, 0f, 180f);
+        UISweep sweep = UISweep.Create(face.rectTransform, 4f, new Color(1f, 1f, 1f, 0.3f));
 
-        Color textColor = style == ButtonStyle.Primary ? WeaponDefs.Hex("3B2205") : TextColor;
+        Color textColor = primary ? Color.white : TextColor;
         TextMeshProUGUI label = Label(face.transform, text, fontSize, textColor);
         label.rectTransform.Fill(12f, 2f, 12f, 0f);
         label.enableAutoSizing = true;
@@ -242,8 +369,11 @@ public static class UIKit {
         b.face = face;
         b.faceRect = face.rectTransform;
         b.label = label;
-        b.SetColor(c, true);
+        b.SetColor(fill, true);
         b.onClick = onClick;
+        b.sweep = sweep;
+        b.fx = primary ? ClickFxStyle.Primary : ClickFxStyle.Normal;
+        root.gameObject.AddComponent<HoloSkin>().Init(b, glow, outline, new[] { b1, b2 }, primary, !danger);
         return b;
     }
 

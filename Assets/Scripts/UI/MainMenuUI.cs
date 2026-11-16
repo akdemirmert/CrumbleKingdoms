@@ -2,9 +2,11 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 // Main menu scene: title, class select, level select, duel setup, how to play and settings pages.
-// The whole uGUI hierarchy is built from code; a diorama of the real game plays behind it.
+// The whole uGUI hierarchy is built from code; a galaxy of stylized planets (SpaceBackdrop) plays behind it.
+// Pages change with a warp-and-slide (UIFade.ShowWarp + a hyperspace pulse); the camera flies to the planet that fits the page.
 // Page contents live in MenuClassPage, MenuLevelPage, MenuDuelPage and MenuHowToPage.
 public class MainMenuUI : MonoBehaviour {
     public HeroClass SelectedClass { get; set; }   // campaign class, shared by the class and level pages
@@ -15,6 +17,8 @@ public class MainMenuUI : MonoBehaviour {
     bool built, shownByCall;
     MenuClassPage classPage;
     MenuLevelPage levelPage;
+    MenuDuelPage duelPage;
+    SpaceBackdrop space;
 
     void Start() {
         EnsureBuilt();
@@ -34,14 +38,37 @@ public class MainMenuUI : MonoBehaviour {
         if (key == null || !pages.ContainsKey(key)) key = "title";
         if (key == "class") classPage.Refresh();
         if (key == "levels") levelPage.Refresh();
-        foreach (KeyValuePair<string, UIFade> p in pages) p.Value.Show(p.Key == key, instant);
+        // forward = deeper into the menu (title -> class -> levels), back = towards the title
+        bool forward = Depth(key) >= Depth(current);
+        foreach (KeyValuePair<string, UIFade> p in pages) {
+            if (instant) p.Value.Show(p.Key == key, true);
+            else p.Value.ShowWarp(p.Key == key, forward);
+        }
+        if (!instant && key != current && space != null) space.WarpPulse();
         current = key;
+        ShowSpace(key);
         Tooltip.Hide();
+    }
+
+    static int Depth(string key) { return string.IsNullOrEmpty(key) || key == "title" ? 0 : key == "levels" ? 2 : 1; }
+
+    // The camera flies to the planet that belongs to the page.
+    void ShowSpace(string key) {
+        if (space == null) return;
+        switch (key) {
+            case "title": space.ShowTitle(); break;
+            case "class": space.ShowNebula(); break;
+            case "levels": levelPage.PreviewDefault(); break;
+            case "duel": duelPage.Preview(); break;
+            case "howto": space.ShowObservatory(); break;
+            case "settings": space.ShowStation(); break;
+            default: space.ShowWide(); break;
+        }
     }
 
     void Update() {
         Keyboard kb = Keyboard.current;
-        if (kb == null || !built || !kb.escapeKey.wasPressedThisFrame) return;
+        if (kb == null || !built || SpaceBackdrop.Diving || !kb.escapeKey.wasPressedThisFrame) return;
         string back = current == "levels" ? "class" : current == "title" ? null : "title";
         if (back == null) return;
         SFX.Play(SoundId.UIBack);
@@ -52,26 +79,35 @@ public class MainMenuUI : MonoBehaviour {
         if (built) return;
         built = true;
         SelectedClass = SaveData.LastClass;
+        UIKit.LiveAccent = UIKit.DefaultAccent;
+        UIKit.Accent = UIKit.DefaultAccent;   // the battle HUD tints it with the planet's colour: back to the cool default
         UIKit.EnsureEventSystem();
-        MenuBackdrop.Create(transform);
+        space = SpaceBackdrop.Create(transform);
         canvas = UIKit.CreateCanvas(transform, "Menu Canvas", 10);
+        space.uiGroup = canvas.gameObject.AddComponent<CanvasGroup>();   // fades the menu out during the dive
         Vignette();
         BuildTitle(Page("title", null));
-        classPage = new MenuClassPage(this, Page("class", "Choose your class"));
-        levelPage = new MenuLevelPage(this, Page("levels", "Campaign"));
-        new MenuDuelPage(this, Page("duel", "Duel"));
-        new MenuHowToPage(this, Page("howto", "How to play"));
-        BuildSettings(Page("settings", "Settings"));
+        classPage = new MenuClassPage(this, Page("class", "Choose your class", 0.3f));
+        // no dimming on the level page: the planet shows through, only a shade behind the cards keeps them readable
+        RectTransform levels = Page("levels", "Campaign", 0f);
+        BottomShade(levels);
+        levelPage = new MenuLevelPage(this, levels);
+        duelPage = new MenuDuelPage(this, Page("duel", "Duel", 0.2f));
+        new MenuHowToPage(this, Page("howto", "How to play", 0.25f));
+        BuildSettings(Page("settings", "Settings", 0.25f));
         foreach (UIFade f in pages.Values) f.Show(false, true);
     }
 
     // ------------------------------------------------------------------ helpers for the pages
     // Full-screen page with a dimmed background and a heading (null = no heading, no dim).
-    public RectTransform Page(string key, string heading) {
+    public RectTransform Page(string key, string heading, float dim = 0.5f) {
         RectTransform root = UIKit.Rect(canvas.transform, "Page " + key).Fill();
-        pages[key] = root.gameObject.AddComponent<UIFade>();
+        UIFade fade = root.gameObject.AddComponent<UIFade>();
+        fade.hiddenOffset = Vector2.zero;   // pages warp (scale) instead of sliding
+        fade.speed = 4.5f;
+        pages[key] = fade;
         if (heading == null) return root;
-        UIKit.Img(root, null, new Color(0.02f, 0.03f, 0.07f, 0.5f), "Dim").rectTransform.Fill();
+        if (dim > 0f) UIKit.Img(root, null, new Color(0.02f, 0.03f, 0.07f, dim), "Dim").rectTransform.Fill();
         TextMeshProUGUI h = UIKit.Title(root, heading.ToUpperInvariant(), 66f, UIKit.TextColor);
         h.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0f, -34f), new Vector2(1400f, 86f));
         h.characterSpacing = 4f;
@@ -92,9 +128,21 @@ public class MainMenuUI : MonoBehaviour {
         return b;
     }
 
-    // Darkens the top and bottom of the screen so text reads well over the 3D diorama.
+    // Dark ramp behind the level cards (bottom of the page), transparent towards the planet.
+    static void BottomShade(RectTransform page) {
+        Image shade = UIKit.Img(page, UIKit.VerticalGradient(new Color(0.02f, 0.03f, 0.07f, 0.85f), new Color(0.02f, 0.03f, 0.07f, 0f)), Color.white, "Shade");
+        RectTransform rt = shade.rectTransform;
+        rt.anchorMin = new Vector2(0f, 0f);
+        rt.anchorMax = new Vector2(1f, 0f);
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.offsetMin = Vector2.zero;
+        rt.sizeDelta = new Vector2(0f, 700f);
+        rt.SetAsFirstSibling();
+    }
+
+    // Darkens the top and bottom of the screen a little so text reads well over the planets.
     void Vignette() {
-        Color edge = new Color(0.02f, 0.03f, 0.07f, 0.75f), clear = new Color(0.02f, 0.03f, 0.07f, 0f);
+        Color edge = new Color(0.02f, 0.03f, 0.07f, 0.5f), clear = new Color(0.02f, 0.03f, 0.07f, 0f);
         Texture2D tex = TexKit.Gradient(edge, clear, clear, UIKit.Alpha(edge, 0.55f));
         UIKit.Img(canvas.transform, TexKit.ToSprite(tex), Color.white, "Vignette").rectTransform.Fill();
     }

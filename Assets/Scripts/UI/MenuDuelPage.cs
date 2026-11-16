@@ -135,9 +135,9 @@ public class MenuDuelPage {
         for (int i = 0; i < count; i++) choice.Add(ThemeTile(themes, (ArenaTheme)i, out borders[i]));
         choice.styler = (i, on) => borders[i].color = on ? UIKit.Lighten(UIKit.ThemeColor((ArenaTheme)i), 0.3f) : new Color(1f, 1f, 1f, 0.06f);
         choice.Select((int)options.theme, false);
-        choice.onChange = i => options.theme = (ArenaTheme)i;
+        choice.onChange = i => { options.theme = (ArenaTheme)i; Preview(); };
 
-        SwitchColumn(panel, "Night", new Vector2(-220f, 0f), options.night, v => options.night = v);
+        SwitchColumn(panel, "Night", new Vector2(-220f, 0f), options.night, v => { options.night = v; Preview(); });
         SwitchColumn(panel, "Wind", new Vector2(-40f, 0f), options.wind, v => options.wind = v);
     }
 
@@ -170,6 +170,11 @@ public class MenuDuelPage {
         col.Place(new Vector2(1f, 0.5f), pos, new Vector2(160f, 120f));
         UIKit.Label(col, label, 28f, UIKit.TextColor).Size(160f, 36f);
         UISwitch.Create(col, value, UIKit.Good, onChange);
+    }
+
+    // The planet behind the page follows the chosen arena (theme + night): 10 combinations, 10 planets.
+    public void Preview() {
+        if (SpaceBackdrop.Current != null) SpaceBackdrop.Current.ShowWorld(options.theme, options.night, SpaceView.Duel);
     }
 
     void StartDuel() {

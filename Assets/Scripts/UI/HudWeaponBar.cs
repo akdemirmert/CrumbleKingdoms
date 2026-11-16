@@ -15,7 +15,7 @@ public class HudWeaponBar : MonoBehaviour {
         public TextMeshProUGUI nameText, cooldownText;
         public GameObject cooldown;
         public int shownCooldown = -1;
-        public float lift;
+        public float lift, pulse;
     }
 
     readonly Slot[] slots = new Slot[4];
@@ -51,6 +51,7 @@ public class HudWeaponBar : MonoBehaviour {
             UIKit.WeaponIcon(s.iconHolder, def.id, SlotSize - 12f).Fill();
             s.nameText.text = def.name;
             s.glow.color = UIKit.Alpha(def.color, 0f);
+            s.button.fxColor = UIKit.Lighten(def.color, 0.25f);   // the click pulse takes the weapon's colour
             s.shownCooldown = -1;
         }
     }
@@ -85,6 +86,7 @@ public class HudWeaponBar : MonoBehaviour {
 
         s.button = holder.gameObject.AddComponent<UIButton>();
         s.button.clickSound = null;   // HumanShotController plays the selection click
+        s.button.fx = ClickFxStyle.Weapon;
         s.button.onClick = () => { if (BattleManager.I != null) BattleManager.I.Human.SelectSlot(index); };
         TooltipTrigger.Add(holder, () => bound != null ? bound.Weapon(index).title : "", () => TooltipBody(index));
         return s;
@@ -105,6 +107,11 @@ public class HudWeaponBar : MonoBehaviour {
             int cd = Mathf.Max(0, bound.cooldowns[i]);
             bool selected = bound.selectedSlot == i;
             if (cd != s.shownCooldown) {
+                if (s.shownCooldown > 0 && cd == 0) {   // the weapon is ready again: pulse the slot
+                    s.pulse = 1f;
+                    ClickFX.Play(RectTransformUtility.WorldToScreenPoint(null, s.frame.rectTransform.position),
+                                 ClickFxStyle.Weapon, UIKit.Lighten(def.color, 0.3f), 64f);
+                }
                 s.shownCooldown = cd;
                 s.cooldown.SetActive(cd > 0);
                 s.cooldownText.text = cd.ToString();
@@ -114,7 +121,9 @@ public class HudWeaponBar : MonoBehaviour {
             s.lift = Mathf.Lerp(s.lift, selected ? 1f : 0f, k);
             s.visual.anchoredPosition = new Vector2(0f, 12f * s.lift);
             s.frame.color = Color.Lerp(s.frame.color, selected ? def.color : UIKit.Secondary, k);
-            s.glow.color = UIKit.Alpha(def.color, 0.8f * s.lift);
+            s.pulse = Mathf.MoveTowards(s.pulse, 0f, Time.unscaledDeltaTime * 2.2f);
+            s.glow.color = UIKit.Alpha(def.color, Mathf.Max(0.8f * s.lift, 0.95f * s.pulse));
+            s.frame.rectTransform.localScale = Vector3.one * (1f + 0.16f * s.pulse * s.pulse);
             s.nameText.color = selected ? UIKit.Lighten(def.color, 0.4f) : UIKit.TextDim;
         }
     }

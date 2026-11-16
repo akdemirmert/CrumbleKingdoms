@@ -19,6 +19,8 @@ public class MenuLevelPage {
     readonly RectTransform portraitSlot;
     readonly TextMeshProUGUI className, starsText;
     int shownClass = -1;
+    int previewIndex = -1;                 // level whose planet the camera is showing
+    const float GridScale = 0.7f;          // the cards sit low and small so the planet fits above them
 
     public MenuLevelPage(MainMenuUI menu, RectTransform page) {
         this.menu = menu;
@@ -40,7 +42,8 @@ public class MenuLevelPage {
         starsText.rectTransform.Place(new Vector2(0f, 0.5f), new Vector2(84f, 0f), new Vector2(160f, 50f));
 
         // Level grid, 5 x 2.
-        RectTransform grid = UIKit.Rect(page, "Grid").Place(new Vector2(0.5f, 0.5f), new Vector2(0f, -14f), new Vector2(1640f, 560f));
+        RectTransform grid = UIKit.Rect(page, "Grid").Place(new Vector2(0.5f, 0f), new Vector2(0f, 138f), new Vector2(1640f, 560f));
+        grid.localScale = Vector3.one * GridScale;   // anchored and pivoted at the bottom centre
         GridLayoutGroup g = grid.gameObject.AddComponent<GridLayoutGroup>();
         g.cellSize = new Vector2(308f, 262f);
         g.spacing = new Vector2(24f, 24f);
@@ -115,6 +118,7 @@ public class MenuLevelPage {
         card.button = root.gameObject.AddComponent<UIButton>();
         card.button.hoverScale = 1.05f;
         card.button.onClick = () => Play(index);
+        card.button.onHover = () => Preview(index);   // hovering a card flies the camera to its planet (locked ones show as silhouettes)
         TooltipTrigger.Add(root, () => L.name, () => Describe(index));
         return card;
     }
@@ -139,6 +143,16 @@ public class MenuLevelPage {
         int stars = SaveData.GetStars(index);
         if (stars > 0) s += "\n<color=#FFC845>Best: " + stars + (stars == 1 ? " star" : " stars") + "</color>";
         return s;
+    }
+
+    public void Preview(int index) {
+        previewIndex = index;
+        if (SpaceBackdrop.Current != null) SpaceBackdrop.Current.ShowLevel(index);
+    }
+
+    // When the page opens: the planet of the level hovered last, or of the furthest unlocked level.
+    public void PreviewDefault() {
+        Preview(previewIndex >= 0 ? previewIndex : Mathf.Clamp(SaveData.UnlockedCount - 1, 0, LevelDefs.Count - 1));
     }
 
     void Play(int index) {

@@ -48,10 +48,10 @@ public class HudPauseMenu : MonoBehaviour {
 
     public void Open() {
         ShowSettings(false);
-        fade.Show(true);
+        fade.ShowWarp(true, true);     // the pause menu swells in from slightly larger, like a menu page
     }
 
-    public void Close() { fade.Show(false); }
+    public void Close() { fade.ShowWarp(false, false); }
 
     // Esc inside the menu: leave the settings first. Returns true if the key was used here.
     public bool BackFromSettings() {

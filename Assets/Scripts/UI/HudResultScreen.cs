@@ -53,7 +53,7 @@ public class HudResultScreen : MonoBehaviour {
         }
         BuildStats(bm, y);
         BuildButtons(bm, campaign, won);
-        fade.Show(true);
+        fade.ShowWarp(true, true);
     }
 
     static void Headline(BattleManager bm, out string title, out Color color, out string line) {

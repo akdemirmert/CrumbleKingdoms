@@ -29,6 +29,13 @@ public class BattleHUD : MonoBehaviour {
     WeaponDef tutorialFor;   // self-cast weapon the bottom hint currently explains (null = the drag tutorial)
     Image[] windChevrons;
     UIBar powerBar;
+    // HUD polish: turn box glow + glint, banner glint, power glow and the MAX flash
+    Image turnGlow, powerGlow;
+    UISweep turnSweep, bannerSweep;
+    TextMeshProUGUI powerLabel;
+    Color turnColor = Color.white;
+    float turnGlowT, turnSide = -1f;
+    bool maxShown;
     HudWeaponBar weaponBar;
     HudPauseMenu pauseMenu;
     HudResultScreen result;
@@ -100,6 +107,10 @@ public class BattleHUD : MonoBehaviour {
         turnTitle.color = UIKit.Lighten(f.TeamColor, 0.35f);
         turnNumber.text = "TURN " + bm.Turn;
         turnPunch = 1f;
+        turnColor = f.TeamColor;                      // the turn box swooshes in from the side of the team and glows in its colour
+        turnSide = f.setup.team == 0 ? -1f : 1f;
+        turnGlowT = 1f;
+        turnSweep.Play();
         if (f.IsHuman) weaponBar.Bind(f);
         if (f.IsHuman && hotSeatGame) ShowHotSeat(f);
     }
@@ -127,6 +138,7 @@ public class BattleHUD : MonoBehaviour {
         introBanner = bm.State == BattleState.Intro || bm.State == BattleState.Building;
         bannerT = 0f;
         bannerRoot.gameObject.SetActive(true);
+        bannerSweep.Play(0.35f);
     }
 
     // ------------------------------------------------------------------ per frame
@@ -225,12 +237,33 @@ public class BattleHUD : MonoBehaviour {
         if (angle != shownAngle) { shownAngle = angle; angleText.text = angle + "°"; }
         if (power != shownPower) { shownPower = power; powerText.text = power + "%"; }
         powerBar.SetValue(human.Power01, true);
+
+        // the power glow grows with the pull; at full power the label flashes MAX!
+        float p = human.Power01;
+        bool max = p >= 0.985f;
+        float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 16f);
+        powerGlow.color = UIKit.Alpha(Color.Lerp(WeaponDefs.Hex("FF5A3D"), WeaponDefs.Hex("FFE066"), max ? pulse : p),
+                                      0.6f * p * p * p + (max ? 0.25f * pulse : 0f));
+        if (max != maxShown) {
+            maxShown = max;
+            powerLabel.text = max ? "MAX!" : "POWER";
+            if (!max) { powerLabel.color = UIKit.TextDim; powerText.rectTransform.localScale = Vector3.one; }
+        }
+        if (max) {
+            powerLabel.color = Color.Lerp(UIKit.Gold, Color.white, pulse);
+            float s = 1f + 0.08f * pulse;
+            powerText.rectTransform.localScale = new Vector3(s, s, 1f);
+        }
     }
 
     void UpdateTurnBox() {
-        turnPunch = Mathf.MoveTowards(turnPunch, 0f, Time.unscaledDeltaTime * 3f);
+        float dt = Time.unscaledDeltaTime;
+        turnPunch = Mathf.MoveTowards(turnPunch, 0f, dt * 3f);
+        turnGlowT = Mathf.MoveTowards(turnGlowT, 0f, dt * 0.8f);
         float s = 1f + 0.18f * turnPunch * turnPunch;
         turnBox.localScale = new Vector3(s, s, 1f);
+        turnBox.anchoredPosition = new Vector2(turnSide * 140f * turnPunch * turnPunch * turnPunch, 0f);   // swoosh in
+        turnGlow.color = UIKit.Alpha(turnColor, 0.22f + 0.7f * turnGlowT * turnGlowT);
     }
 
     // Arrow chevrons point where the wind blows; 1-3 of them by strength, animated like a marquee.
@@ -298,6 +331,10 @@ public class BattleHUD : MonoBehaviour {
 
     // ------------------------------------------------------------------ building
     void Build() {
+        // the glassy panels take the colour of the planet being fought on
+        GameSession.CurrentWorld(out ArenaTheme worldTheme, out bool worldNight);
+        UIKit.Accent = UIKit.AccentFor(worldTheme, worldNight);
+        UIKit.LiveAccent = UIKit.Accent;   // holographic buttons in the HUD glow in the same colour
         Canvas canvas = UIKit.CreateCanvas(transform, "HUD Canvas", 10);
         canvasRoot = (RectTransform)canvas.transform;
         BuildTop();
@@ -339,6 +376,10 @@ public class BattleHUD : MonoBehaviour {
         turnTitle.fontSizeMin = 20f;
         turnTitle.fontSizeMax = 36f;
         turnTitle.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0f, 10f), new Vector2(366f, 50f));
+        turnGlow = UIKit.Img(turnBox, UIKit.Shadow, UIKit.Alpha(Color.white, 0f), "TurnGlow");
+        turnGlow.rectTransform.Fill(-26f, -26f, -26f, -26f);
+        turnGlow.rectTransform.SetAsFirstSibling();
+        turnSweep = UISweep.Create(turnBox, 8f, new Color(1f, 1f, 1f, 0.35f));
 
         RectTransform wind = UIKit.Panel(centre, UIKit.PanelColor, 22f).Place(new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(260f, 46f));
         UIKit.Label(wind, "WIND", 18f, UIKit.TextDim, TextAlignmentOptions.Left).rectTransform
@@ -376,8 +417,12 @@ public class BattleHUD : MonoBehaviour {
         panel.sizeDelta = new Vector2(250f, 128f);
         aimPanel = panel.gameObject.AddComponent<UIFade>();
         aimPanel.hiddenOffset = new Vector2(-30f, 0f);
+        powerGlow = UIKit.Img(panel, UIKit.Shadow, UIKit.Alpha(WeaponDefs.Hex("FF5A3D"), 0f), "PowerGlow");
+        powerGlow.rectTransform.Fill(-30f, -30f, -30f, -30f);
+        powerGlow.rectTransform.SetAsFirstSibling();
         UIKit.Label(panel, "ANGLE", 17f, UIKit.TextDim).rectTransform.Place(new Vector2(0f, 1f), new Vector2(14f, -10f), new Vector2(105f, 22f));
-        UIKit.Label(panel, "POWER", 17f, UIKit.TextDim).rectTransform.Place(new Vector2(1f, 1f), new Vector2(-14f, -10f), new Vector2(105f, 22f));
+        powerLabel = UIKit.Label(panel, "POWER", 17f, UIKit.TextDim);
+        powerLabel.rectTransform.Place(new Vector2(1f, 1f), new Vector2(-14f, -10f), new Vector2(105f, 22f));
         angleText = UIKit.Title(panel, "", 44f, UIKit.TextColor);
         angleText.rectTransform.Place(new Vector2(0f, 1f), new Vector2(14f, -32f), new Vector2(105f, 52f));
         powerText = UIKit.Title(panel, "", 44f, UIKit.Gold);
@@ -426,6 +471,8 @@ public class BattleHUD : MonoBehaviour {
         bannerSub.rectTransform.Place(new Vector2(0.5f, 1f), new Vector2(0f, -142f), new Vector2(1400f, 48f));
         skipHint = UIKit.Label(bannerRoot, "Click to skip", 22f, UIKit.TextDim, TextAlignmentOptions.Center, false);
         skipHint.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(400f, 30f));
+        RectTransform sweepArea = UIKit.Rect(bannerRoot, "SweepArea").Place(new Vector2(0.5f, 1f), new Vector2(0f, -26f), new Vector2(1000f, 112f));
+        bannerSweep = UISweep.Create(sweepArea, 0f, new Color(1f, 0.95f, 0.8f, 0.3f));
         bannerRoot.gameObject.SetActive(false);
     }
 
@@ -441,6 +488,7 @@ public class BattleHUD : MonoBehaviour {
         UIButton dismiss = root.gameObject.AddComponent<UIButton>();
         dismiss.hoverScale = dismiss.pressScale = 1f;
         dismiss.hoverSound = false;
+        dismiss.fx = ClickFxStyle.None;   // a click anywhere just dismisses the card: no burst
         dismiss.onClick = () => Set(hotSeat, false);
 
         UIKit.Img(root, UIKit.Glow, new Color(1f, 1f, 1f, 0.12f), "Halo").rectTransform

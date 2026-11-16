@@ -26,14 +26,34 @@ public static class GameSession {
         Mode = GameMode.Campaign;
         LevelIndex = Mathf.Clamp(index, 0, LevelDefs.Count - 1);
         SaveData.LastClass = PlayerClass;
-        SceneFader.Load(BattleScene);
+        EnterBattle();
     }
 
     // A new duel: a coin toss decides who throws first.
     public static void StartDuel() {
         Mode = GameMode.Duel;
         Duel.firstTeam = Random.value < 0.5f ? 0 : 1;
-        SceneFader.Load(BattleScene);
+        EnterBattle();
+    }
+
+    // The arena the next battle is fought on (its planet is the one the menu dives into).
+    public static void CurrentWorld(out ArenaTheme theme, out bool night) {
+        if (Mode == GameMode.Campaign) {
+            LevelDef L = LevelDefs.Levels[Mathf.Clamp(LevelIndex, 0, LevelDefs.Count - 1)];
+            theme = L.theme;
+            night = L.night;
+        } else {
+            theme = Duel.theme;
+            night = Duel.night;
+        }
+    }
+
+    // From the menu the camera dives into the level's planet first; from the result screen or pause menu
+    // (retry, next level) the screen simply floods with the planet's atmosphere colour.
+    static void EnterBattle() {
+        CurrentWorld(out ArenaTheme theme, out bool night);
+        if (SpaceBackdrop.Current != null) SpaceBackdrop.Current.Dive(theme, night);
+        else SceneFader.Load(BattleScene, SpacePlanet.FloodColor(theme, night), 0.35f, 0.9f);
     }
 
     public static bool HasNextLevel => Mode == GameMode.Campaign && LevelIndex + 1 < LevelDefs.Count;
@@ -43,7 +63,7 @@ public static class GameSession {
     // Retry / rematch. In a duel the other side starts the rematch.
     public static void Restart() {
         if (Mode == GameMode.Duel) Duel.firstTeam = 1 - Duel.firstTeam;
-        SceneFader.Load(BattleScene);
+        EnterBattle();
     }
 
     public static void ToMenu(string panel = null) {

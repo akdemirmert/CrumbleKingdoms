@@ -16,10 +16,16 @@ public class UIButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     [System.NonSerialized] public SoundId? clickSound = SoundId.UIClick;
     public bool hoverSound = true;
     public float hoverScale = 1.04f, pressScale = 0.96f;
+    public ClickFxStyle fx = ClickFxStyle.Normal;               // what a click looks like (see ClickFX)
+    public Color fxColor = new Color(0.78f, 0.89f, 1f);         // tint of Normal and Weapon clicks
+    public Action onHover;                                      // pointer entered (also while locked: used to preview levels)
+    public UISweep sweep;                                       // scan line that runs across the button on hover (holographic buttons)
+    public bool Hovered => over && interactable;
+    public float FlashValue => flash;
 
     Color baseColor = Color.white;
     bool interactable = true, over, down;
-    float scale = 1f, push;
+    float scale = 1f, push, flash;
 
     public bool Interactable { get => interactable; set => interactable = value; }
 
@@ -38,6 +44,8 @@ public class UIButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     public void OnPointerEnter(PointerEventData e) {
         over = true;
         if (interactable && hoverSound) SFX.Play(SoundId.UIHover, null, 0.4f);
+        onHover?.Invoke();
+        if (sweep != null && interactable) sweep.Play();
     }
 
     public void OnPointerExit(PointerEventData e) { over = down = false; }
@@ -49,7 +57,22 @@ public class UIButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     public void OnPointerClick(PointerEventData e) {
         if (!interactable || e.button != PointerEventData.InputButton.Left) return;
         if (clickSound.HasValue) SFX.Play(clickSound.Value);
+        PlayClickFx(e);
         onClick?.Invoke();
+    }
+
+    // Light burst / shockwave / inward fade / weapon pulse, a flash of the face and a small bounce of the button.
+    void PlayClickFx(PointerEventData e) {
+        ClickFxStyle style = clickSound == SoundId.UIBack && fx != ClickFxStyle.None ? ClickFxStyle.Back : fx;
+        if (style == ClickFxStyle.None) return;
+        Rect r = ((RectTransform)transform).rect;
+        float size = Mathf.Clamp(Mathf.Min(r.width, r.height) * 0.55f, 34f, 150f);
+        Color c = style == ClickFxStyle.Primary ? UIKit.Gold : style == ClickFxStyle.Back ? UIKit.TextDim : fxColor;
+        ClickFX.Play(e.position, style, c, size);
+        flash = 1f;
+        float kick = style == ClickFxStyle.Primary ? 0.14f : style == ClickFxStyle.Back ? -0.07f : style == ClickFxStyle.Weapon ? 0.1f : 0.05f;
+        scale = Mathf.Max(0.5f, scale + kick);
+        transform.localScale = new Vector3(scale, scale, 1f);
     }
 
     void OnDisable() {
@@ -68,6 +91,10 @@ public class UIButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
             transform.localScale = new Vector3(scale, scale, 1f);
         }
         if (face != null) face.color = Color.Lerp(face.color, TargetColor(), k);
+        if (flash > 0f) {
+            flash = Mathf.Max(0f, flash - Time.unscaledDeltaTime * 4.5f);
+            if (face != null) face.color = Color.Lerp(face.color, Color.white, flash * 0.55f);
+        }
         float pushTarget = down && interactable ? 5f : 0f;
         if (faceRect != null && push != pushTarget) {
             push = Mathf.Abs(pushTarget - push) < 0.05f ? pushTarget : Mathf.Lerp(push, pushTarget, k);
@@ -192,15 +219,18 @@ public class UISlider : MonoBehaviour, IPointerDownHandler, IDragHandler, IPoint
 
 // Health-style bar: the fill eases to the value, a pale "ghost" trails behind to show the damage taken.
 public class UIBar : MonoBehaviour {
-    RectTransform fill, ghost;
+    RectTransform rt, fill, ghost;
     Image fillImage;
     Color high, low;
     float target = 1f, shown = 1f, ghostValue = 1f, ghostDelay;
+    float flash, shake;      // damage feedback: the fill flashes white and the bar shakes
+    Vector2 rest;
 
     public static UIBar Create(Transform parent, Color high, Color low, float height) {
         RectTransform root = UIKit.Rect(parent, "Bar");
         root.sizeDelta = new Vector2(100f, height);
         UIBar bar = root.gameObject.AddComponent<UIBar>();
+        bar.rt = root;
         float r = height * 0.5f;
         UIKit.RoundedImg(root, new Color(0f, 0f, 0f, 0.5f), r, "Track").rectTransform.Fill();
         bar.ghost = UIKit.RoundedImg(root, new Color(1f, 0.93f, 0.75f, 0.85f), r, "Ghost").rectTransform;
@@ -219,7 +249,14 @@ public class UIBar : MonoBehaviour {
 
     public void SetValue(float v, bool instant = false) {
         v = Mathf.Clamp01(v);
-        if (v < target - 0.001f) ghostDelay = 0.45f;   // hold the ghost for a moment, then let it drain
+        if (v < target - 0.001f) {
+            ghostDelay = 0.45f;   // hold the ghost for a moment, then let it drain
+            if (!instant && target - v > 0.004f) {
+                if (shake <= 0f) rest = rt.anchoredPosition;
+                flash = 1f;
+                shake = Mathf.Clamp01((target - v) * 6f + 0.3f);
+            }
+        }
         target = v;
         if (instant || v > ghostValue) { shown = ghostValue = v; }
         Apply();
@@ -242,6 +279,14 @@ public class UIBar : MonoBehaviour {
         shown = Mathf.Abs(target - shown) < 0.001f ? target : Mathf.Lerp(shown, target, UIKit.Approach(10f));
         if (ghostDelay > 0f) ghostDelay -= dt;
         else ghostValue = Mathf.MoveTowards(ghostValue, target, dt * 0.6f);
+        if (flash > 0f) flash = Mathf.Max(0f, flash - dt * 3f);
+        if (shake > 0f) {
+            shake = Mathf.Max(0f, shake - dt * 3.5f);
+            float a = shake * 5f;
+            rt.anchoredPosition = shake > 0f
+                ? rest + new Vector2(Mathf.Sin(Time.unscaledTime * 90f) * a, Mathf.Cos(Time.unscaledTime * 70f) * a * 0.5f)
+                : rest;
+        }
         Apply();
     }
 
@@ -252,7 +297,7 @@ public class UIBar : MonoBehaviour {
         ghost.anchorMin = Vector2.zero;
         ghost.anchorMax = new Vector2(Mathf.Max(ghostValue, shown), 1f);
         ghost.offsetMin = ghost.offsetMax = Vector2.zero;
-        fillImage.color = Color.Lerp(low, high, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.15f, 0.7f, shown)));
+        fillImage.color = Color.Lerp(Color.Lerp(low, high, Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.15f, 0.7f, shown))), Color.white, flash * 0.75f);
         fillImage.enabled = shown > 0.004f;
     }
 }
@@ -282,6 +327,13 @@ public class UIFade : MonoBehaviour {
             Apply();
             if (!on) gameObject.SetActive(false);
         }
+    }
+
+    // Page change that feels like a hop through space: the page that arrives starts a little bigger (forward) or
+    // smaller (back) and settles, the page that leaves shrinks (forward) or swells (back).
+    public void ShowWarp(bool on, bool forward) {
+        hiddenScale = on == forward ? 1.14f : 0.88f;
+        Show(on);
     }
 
     void Init() {
@@ -331,7 +383,7 @@ public class UIChoice {
         for (int i = 0; i < buttons.Count; i++) {
             bool on = i == index;
             if (styler != null) { styler(i, on); continue; }
-            buttons[i].SetColor(on ? accent : UIKit.Secondary);
+            buttons[i].SetColor(on ? accent : UIKit.GlassFill);
             if (buttons[i].label != null) buttons[i].label.color = on && Luma(accent) > 0.55f ? WeaponDefs.Hex("2A1A05") : UIKit.TextColor;
         }
         if (notify) onChange?.Invoke(index);
