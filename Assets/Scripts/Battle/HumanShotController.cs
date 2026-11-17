@@ -17,6 +17,14 @@ public class HumanShotController : MonoBehaviour {
     public event Action<int> WeaponSelected;
     public event Action<Projectile> Activated;
 
+    // A weapon that asks the player something before it can be aimed (the Gambler's face-down card, his heads-or-tails
+    // call) sets this: while it returns a prompt for the selected weapon, pressing does not start an aim. Null = nothing asked.
+    public static Func<Fortress, WeaponDef, string> PendingChoice;
+
+    public static string ChoiceFor(Fortress f) {
+        return PendingChoice != null && f != null ? PendingChoice(f, f.SelectedWeapon) : null;
+    }
+
     const float MinPullPixels = 14f;
     AimVisuals visuals;
     Vector2 pressPos;
@@ -73,6 +81,11 @@ public class HumanShotController : MonoBehaviour {
             if (kb.digit2Key.wasPressedThisFrame) SelectSlot(1);
             if (kb.digit3Key.wasPressedThisFrame) SelectSlot(2);
             if (kb.digit4Key.wasPressedThisFrame) SelectSlot(3);
+        }
+        // The weapon wants an answer first (the HUD shows the question): no aiming until it has one.
+        if (ChoiceFor(Active) != null) {
+            if (IsDragging || HasAim) CancelAim();
+            return;
         }
         // Weapons used on yourself (cloak, space warp) need no aim: one click or Space casts them.
         if (Active.SelectedWeapon.selfCast) {

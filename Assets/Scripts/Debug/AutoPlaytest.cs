@@ -81,7 +81,7 @@ public class AutoPlaytest : MonoBehaviour {
     }
 
     IEnumerator Start() {
-        // -quick: four duels (classes 0v1, 2v3, 4v5, 6v0) fire every weapon once; skips the rest.
+        // -quick: four duels (classes 0v1, 2v3, 4v5, 6v7) fire every weapon once; skips the rest.
         // -only N: just the weapon duel of class N against class N+1.
         // -bench T [-classes 3,5]: weapon damage benchmark (see Bench), T trials per weapon.
         // -duels N [-classes 3,5]: full bot duels of those classes against every other class (see DuelSeries).
@@ -223,55 +223,74 @@ public class AutoPlaytest : MonoBehaviour {
     // for every weapon). Notes the enemy commander's damage, the keep's integrity loss and the blocks it lost, measured
     // when the target's turn starts, so the first flare of a painted sun counts (the anteater eats on Dalí's own turns,
     // so it shows nothing here, and the bone dragon's later passes are missed). A kill also counts the defeated keep's
-    // collapse in its integrity and blocks.
+    // collapse in its integrity and blocks. The Gambler's chance weapons are benched per outcome (BenchVariants).
     IEnumerator Bench(int trials, List<int> classes) {
-        AIProfile perfect = new AIProfile { skill = 1f, aimError = 0f, powerError = 0f, windSense = 1f, thinkTime = 0.2f };
         foreach (int c in classes) {
             for (int slot = 0; slot < 4; slot++) {
                 WeaponDef def = WeaponDefs.ForClass((HeroClass)c, slot);
                 if (def.selfCast || def.id == WeaponId.MeltingClocks) continue;
-                float hpSum = 0f, integritySum = 0f;
-                int lostSum = 0, kills = 0, runs = 0;
-                List<string> each = new List<string>();
-                for (int t = 0; t < trials; t++) {
-                    benchSlot = slot;
-                    GameSession.AutoPlay = true;
-                    GameSession.Mode = GameMode.Duel;
-                    GameSession.Duel = new DuelOptions {
-                        p1Class = (HeroClass)c, p2Class = HeroClass.Soldier, p2Controller = ControllerType.Bot, botDifficulty = 2,
-                        theme = ArenaTheme.Meadow, night = false, wind = false, seed = 200 + t, firstTeam = 0,
-                    };
-                    yield return LoadBattle(() => SceneFader.Load(GameSession.BattleScene));
-                    BattleManager bm = BattleManager.I;
-                    if (!Alive(bm) || bm.fortresses.Count < 2) { each.Add("no battle"); continue; }
-                    Fortress me = bm.fortresses[0], enemy = bm.fortresses[1];
-                    me.setup.ai = perfect;   // read when its first turn starts, after the intro
-                    TimeFX.Speed = 2.5f;
-                    yield return WaitFor(() => !Alive(bm) || (bm.State == BattleState.Aiming && bm.Current == me), 30f);
-                    if (!Alive(bm) || bm.Current != me) { each.Add("no turn"); continue; }
-                    float hp0 = enemy.commander.hp, integrity0 = enemy.Integrity;
-                    losses.Remove(enemy);
-                    yield return WaitFor(() => !Alive(bm) || bm.State == BattleState.Finished || (bm.State == BattleState.Aiming && bm.Current == enemy), 60f);
-                    if (!Alive(bm)) { each.Add("lost battle"); continue; }
-                    float hp = hp0 - (enemy.CommanderAlive ? enemy.commander.hp : 0f), integrity = (integrity0 - enemy.Integrity) * 100f;
-                    losses.TryGetValue(enemy, out int[] n);
-                    int lost = n != null ? n[0] + n[1] + n[2] : 0;
-                    runs++;
-                    hpSum += hp;
-                    integritySum += integrity;
-                    lostSum += lost;
-                    if (!enemy.CommanderAlive) kills++;
-                    each.Add(Mathf.RoundToInt(hp) + "/" + Mathf.RoundToInt(integrity) + "%/" + lost);
+                foreach (var variant in BenchVariants(def)) {
+                    GamblerHand.ForcedCard = variant.card;
+                    GamblerHand.ForcedFlip = variant.flip;
+                    yield return BenchWeapon(c, slot, def, variant.label, trials);
                 }
-                int k = Mathf.Max(1, runs);
-                notes.Add("BENCH " + ((HeroClass)c).ToString().PadRight(8) + def.id.ToString().PadRight(14) + " cd" + def.cooldown +
-                          "  commander -" + (hpSum / k).ToString("0").PadLeft(3) + "  integrity -" + (integritySum / k).ToString("0").PadLeft(2) +
-                          "%  blocks " + ((float)lostSum / k).ToString("0.0").PadLeft(4) + "  kills " + kills + "/" + runs +
-                          "   [" + string.Join("  ", each) + "]");
             }
         }
+        GamblerHand.ForcedCard = -1;
+        GamblerHand.ForcedFlip = -1;
         benchSlot = -1;
         TimeFX.Speed = 1.4f;
+    }
+
+    IEnumerator BenchWeapon(int c, int slot, WeaponDef def, string label, int trials) {
+        AIProfile perfect = new AIProfile { skill = 1f, aimError = 0f, powerError = 0f, windSense = 1f, thinkTime = 0.2f };
+        float hpSum = 0f, integritySum = 0f;
+        int lostSum = 0, kills = 0, runs = 0;
+        List<string> each = new List<string>();
+        for (int t = 0; t < trials; t++) {
+            benchSlot = slot;
+            GameSession.AutoPlay = true;
+            GameSession.Mode = GameMode.Duel;
+            GameSession.Duel = new DuelOptions {
+                p1Class = (HeroClass)c, p2Class = HeroClass.Soldier, p2Controller = ControllerType.Bot, botDifficulty = 2,
+                theme = ArenaTheme.Meadow, night = false, wind = false, seed = 200 + t, firstTeam = 0,
+            };
+            yield return LoadBattle(() => SceneFader.Load(GameSession.BattleScene));
+            BattleManager bm = BattleManager.I;
+            if (!Alive(bm) || bm.fortresses.Count < 2) { each.Add("no battle"); continue; }
+            Fortress me = bm.fortresses[0], enemy = bm.fortresses[1];
+            me.setup.ai = perfect;   // read when its first turn starts, after the intro
+            TimeFX.Speed = 2.5f;
+            yield return WaitFor(() => !Alive(bm) || (bm.State == BattleState.Aiming && bm.Current == me), 30f);
+            if (!Alive(bm) || bm.Current != me) { each.Add("no turn"); continue; }
+            float hp0 = enemy.commander.hp, integrity0 = enemy.Integrity;
+            losses.Remove(enemy);
+            yield return WaitFor(() => !Alive(bm) || bm.State == BattleState.Finished || (bm.State == BattleState.Aiming && bm.Current == enemy), 60f);
+            if (!Alive(bm)) { each.Add("lost battle"); continue; }
+            float hp = hp0 - (enemy.CommanderAlive ? enemy.commander.hp : 0f), integrity = (integrity0 - enemy.Integrity) * 100f;
+            losses.TryGetValue(enemy, out int[] n);
+            int lost = n != null ? n[0] + n[1] + n[2] : 0;
+            runs++;
+            hpSum += hp;
+            integritySum += integrity;
+            lostSum += lost;
+            if (!enemy.CommanderAlive) kills++;
+            each.Add(Mathf.RoundToInt(hp) + "/" + Mathf.RoundToInt(integrity) + "%/" + lost);
+        }
+        int k = Mathf.Max(1, runs);
+        notes.Add("BENCH " + ((HeroClass)c).ToString().PadRight(8) + (def.id + (label.Length > 0 ? " " + label : "")).PadRight(18) + " cd" + def.cooldown +
+                  "  commander -" + (hpSum / k).ToString("0").PadLeft(3) + "  integrity -" + (integritySum / k).ToString("0").PadLeft(2) +
+                  "%  blocks " + ((float)lostSum / k).ToString("0.0").PadLeft(4) + "  kills " + kills + "/" + runs +
+                  "   [" + string.Join("  ", each) + "]");
+    }
+
+    // What one weapon is benched as: the Gambler's Deck of Fate once per kind of card (deck index: 0 = Two, 16 = Six, 32 = Ten,
+    // 36 Jack, 40 Queen, 44 King, 48 Ace, 52 Joker), his coin as a won call (a lost one does nothing); anything else once.
+    static List<(string label, int card, int flip)> BenchVariants(WeaponDef def) {
+        if (def.id == WeaponId.DeckOfFate)
+            return new List<(string, int, int)> { ("2", 0, -1), ("6", 16, -1), ("10", 32, -1), ("J", 36, -1), ("Q", 40, -1), ("K", 44, -1), ("A", 48, -1), ("Joker", 52, -1) };
+        if (def.id == WeaponId.CoinToss) return new List<(string, int, int)> { ("won", -1, 1) };
+        return new List<(string, int, int)> { ("", -1, -1) };
     }
 
     // Full bot-vs-bot duels (both sides the same Hard bot, wind on, the arena changing) of each given class against

@@ -9,7 +9,7 @@ A turn-based physics artillery game made in Unity 6.6 for the physics-game chapt
 catapult and artillery games such as *Crossbows and Catapults*, *Worms* and *Scorched Earth*.
 
 Two or more fortresses stand on islands across the sea. Each fortress has a **Commander** and one of
-**seven classes with four weapons each**. Fortresses are built from physical blocks (wood, stone, metal,
+**eight classes with four weapons each**. Fortresses are built from physical blocks (wood, stone, metal,
 glass, ice, powder kegs) that crack, break into debris and topple.
 
 ---
@@ -40,14 +40,15 @@ Unzip the package first. The unzipped `GROUP05_CrumbleKingdoms` folder **is the 
 | Choose a weapon | click a slot in the weapon bar | 1 – 4 |
 | Special power while the shot flies (bomb, drone, lightning, meteor, void, horn, bats, UFO, clocks, gargoyle, dragon skull, bone charm) | left click | Space |
 | Steer the Soldier's drone | move the mouse | |
-| Use a self-cast weapon (Blood Cloak, Space Warp) – no aiming | left click | Space / Enter |
+| Use a self-cast weapon (Blood Cloak, Space Warp, Loaded Dice) – no aiming | left click | Space / Enter |
+| Gambler: pick a face-down card (Deck of Fate) or call heads or tails (Heads or Tails) before aiming | click a card / a coin | Q W E R T (cards), H / T (coin) |
 | Zoom / pan the camera | mouse wheel / right or middle drag | |
 | Pause | pause button (bottom left) | Esc |
 
 * Teams take turns. The dotted line shows only the start of the arc and ignores the **wind**
   (shown at the top of the screen, new every turn).
 * Weapons 2–4 have **cooldowns** (turns until they can be used again).
-* Some weapons keep working for several turns (cloak, space warp, anteater, painted sun); a small
+* Some weapons keep working for several turns (cloak, space warp, anteater, painted sun, lucky streak); a small
   chip on the fortress card shows each one and how many turns it has left.
 * A fortress is **defeated** only when its commander dies (damage, crushed by rubble, thrown into the
   sea); a ruined fortress just leaves him exposed. The last team standing wins.
@@ -74,6 +75,7 @@ Unzip the package first. The unzipped `GROUP05_CrumbleKingdoms` folder **is the 
 | **Alien** | **UFO (Flying Saucer)** – click to hover; a tractor beam lifts up to three blocks (and exposed commanders) | **Ray Gun** – straight laser, no arc or wind, burns through up to five blocks (fewer stone or metal) | **Flying Cow** – a heavy cow that bounces through the fortress | **Space Warp** – two rounds of low gravity; enemy throws lose a quarter of their power |
 | **Dalí** | **Mustache Birds** – his mustache splits into two doodle birds that weave along the aimed arc, peck through a block or two and burst (it grows back at the start of his next turn) | **Pet Anteater** – burrows under the enemy fortress and eats one block per turn for four turns | **Melting Clocks** – click to melt time: the enemy's last move is undone and Dalí plays again | **Painted Sun** – the arena lights up in painted sunshine and the enemy commander burns for 9–13 every turn for four turns |
 | **Lich** | **Gargoyle Dive** – a stone gargoyle; click and it wakes and dives straight down, smashing through up to two roof blocks before it bursts | **Skeleton Legion** – a tombstone on the enemy's island raises three skeletons that climb his wall and tear out a block each (through an open wall they strike the commander) | **Bone Dragon** – a dragon skull; the bone dragon rises where it lands and breathes soulfire (it burns stone too), then perches on your fortress and sweeps the enemy again on your next two turns (enemies can shoot it down) | **Bone Hand** – a bone charm; where it lands (or on a click) a giant skeletal hand bursts from the ground, slams down on the top and crushes the enemy blocks in its grip, dragging them down into the ground |
+| **Gambler** | **Loaded Dice** – roll two dice: if both show 3 or more, his other three weapons hit 50 % harder and 30 % wider for his next three turns; if not, no luck | **Deck of Fate** – pick one of five face-down cards, then throw it. 2–10: that many razor cards fan out, each cutting through a block. Jack: a jack-in-the-box cranks its tune and blows up. Queen: a heart that seeks the enemy commander through every wall. King: a sword that pierces three or four blocks, and he heals 20. Ace: a giant ace drops from the sky like a guillotine and bursts. Joker: a jester hurls six exploding bowling pins | **Heads or Tails** – call heads or tails and flip the coin at the enemy: if the call comes up, a giant coin crashes down where it landed, cutting through the roof, and sends out a shockwave; if not, nothing happens | **Roulette Wheel** – a spinning wheel saws through up to four blocks, then its ball drops into a pocket: red bursts in fire and sets wood alight, black hits harder, the green zero is a huge jackpot blast |
 
 ## Where the course topics are
 
@@ -101,9 +103,9 @@ Unzip the package first. The unzipped `GROUP05_CrumbleKingdoms` folder **is the 
   multi-turn effects and time-rewind snapshots.
 * `Weapons` – projectile base class, shared piercing flight, weapon registry, files per class.
 * `World` – arena (islands, sea, sky, lighting per theme), fortress generator, commander models, class looks
-  (`ClassSkins` for the Soldier, Wizard and God; `ClassLooks` + the Vampire, Alien, Dalí and Lich look files).
+  (`ClassSkins` for the Soldier, Wizard and God; `ClassLooks` + the Vampire, Alien, Dalí, Lich and Gambler look files).
 * `FX`, `Audio` – particle effects; procedurally synthesised sounds and music.
-* `UI` – menus, HUD, icons.
+* `UI` – menus (a galaxy of planets behind them, `SpaceBackdrop`; starting a battle dives into its planet), HUD, icons.
 * `Util` – procedural materials, meshes, models and textures (`Mats`, `MeshKit`, `ModelKit`, `TexKit`).
 * `Editor/SiegeBuilder.cs` – builds settings, fonts, materials, scenes and the player from code;
   `Editor/PhysicsProbe.cs` – a fortress stability check run in batch mode;

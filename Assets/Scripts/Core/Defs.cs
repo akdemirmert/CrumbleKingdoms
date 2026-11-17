@@ -168,6 +168,23 @@ public static class WeaponDefs {
             activateHint = "Click to RAISE the hand",
             cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 1f, windFactor = 0.5f,
             damage = 45, radius = 2.8f, force = 10, arc = ArcPreference.Any, color = Hex("B8FF7A") });
+        // ---------------------------------------------------------------- Gambler
+        Add(new WeaponDef { id = WeaponId.LuckyDice, name = "Dice", title = "Loaded Dice",
+            description = "Roll two dice. If both show 3 or more, your other three weapons hit harder and wider for your next three turns. If not, no luck.",
+            selfCast = true, cooldown = 2, minSpeed = 10, maxSpeed = 20, gravityScale = 1f, windFactor = 0f,
+            damage = 0, arc = ArcPreference.Any, color = Hex("F2EEE3") });
+        Add(new WeaponDef { id = WeaponId.DeckOfFate, name = "Cards", title = "Deck of Fate",
+            description = "Pick a face-down card, then throw it. 2-10: that many razor cards fan out. Jack: a jack-in-the-box. Queen: a heart that seeks the commander. King: a sword, and he heals. Ace: a giant card drops like a blade. Joker: a juggler hurls exploding pins.",
+            cooldown = 0, minSpeed = 16, maxSpeed = 40, gravityScale = 0.6f, windFactor = 0.3f,
+            damage = 12, pierce = 5f, arc = ArcPreference.Low, color = Hex("E2343F") });   // damage, pierce: one razor card (a fang's budget)
+        Add(new WeaponDef { id = WeaponId.CoinToss, name = "Coin", title = "Heads or Tails",
+            description = "Call heads or tails, then flip the coin at the enemy. If your call comes up, a giant coin crashes down where it landed. If not, nothing happens.",
+            cooldown = 1, minSpeed = 12, maxSpeed = 34, gravityScale = 1f, windFactor = 0.5f,
+            damage = 45, radius = 3.2f, force = 12, pierce = 6f, arc = ArcPreference.High, color = Hex("F2C14E") });   // the giant coin
+        Add(new WeaponDef { id = WeaponId.Roulette, name = "Roulette", title = "Roulette Wheel",
+            description = "A spinning roulette wheel saws through up to four blocks, then its ball drops into a pocket and bursts: red sets wood ablaze, black hits harder, green zero is the jackpot.",
+            cooldown = 2, minSpeed = 14, maxSpeed = 36, gravityScale = 0.8f, windFactor = 0.4f,
+            damage = 30, radius = 2.6f, force = 10, pierce = 4f, arc = ArcPreference.Low, color = Hex("1FA35C") });
     }
 
     static void Add(WeaponDef d) {
@@ -212,6 +229,9 @@ public static class ClassDefs {
         new ClassDef { id = HeroClass.Lich, name = "Lich", tagline = "Death is only the beginning.",
             description = "An undying sorcerer-king and his summons: a diving gargoyle, a skeleton legion, a bone dragon and a giant bone hand that drags walls into the ground.",
             color = WeaponDefs.Hex("8FD45A") },
+        new ClassDef { id = HeroClass.Gambler, name = "Gambler", tagline = "Feeling lucky?",
+            description = "Games of chance: loaded dice that raise the stakes, a deck of fate, a heads-or-tails coin and a roulette wheel.",
+            color = WeaponDefs.Hex("F0509A") },
     };
 
     public static ClassDef Get(HeroClass c) { return all[(int)c]; }

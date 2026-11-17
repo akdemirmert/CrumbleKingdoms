@@ -1,7 +1,7 @@
 # Crumble Kingdoms — Design & Technical Spec
 
 A turn-based physics artillery game (Unity 6.6, URP, Input System). Two or more fortresses
-stand on islands across the sea; each fortress has a **Commander** and one of seven classes with
+stand on islands across the sea; each fortress has a **Commander** and one of eight classes with
 **four weapons**. Players take turns hurling weapons that hook, pierce, explode, rain meteors, call
 lightning, pull blocks into a black hole, beam them up or blow towers over with a shockwave.
 Fortresses are built from physical blocks (wood, stone, metal, glass, ice, powder kegs) that crack,
@@ -39,8 +39,9 @@ levels, game state management.
 * **Class identity**: a fortress and its commander show their class at a glance — Soldier:
   granite, iron and oak, crenellations, banners; Wizard: rune-carved slate, violet glass,
   pointed roofs, floating crystals; God: white marble and gold, columns, golden roofs. The Vampire,
-  Alien, Dalí and Lich bring their own skins, decorations and commanders (`ClassLooks`); the Lich's
-  is a necropolis of rune-glowing basalt, obsidian spires, soulfire braziers and tombstones.
+  Alien, Dalí, Lich and Gambler bring their own skins, decorations and commanders (`ClassLooks`); the Lich's
+  is a necropolis of rune-glowing basalt, obsidian spires, soulfire braziers and tombstones, the Gambler's a
+  casino of green baize, mahogany and brass with neon suit signs, marquee bulbs, giant dice and chip stacks.
   Physics is identical across skins; the team colour appears only on flags and small accents.
 
 ## 2. Classes and weapons (WeaponId order is fixed)
@@ -75,6 +76,10 @@ levels, game state management.
 | Lich | 2 | SkeletonLegion | A tombstone: on the enemy's island **three skeletons** rise, run to his wall, climb it and **tear out a block each**; through an open wall they strike the commander. A falling block or a blast turns a skeleton to bones. The bot throws it in front of the wall. |
 | Lich | 3 | BoneDragon | A dragon skull; on impact or **click** the **bone dragon** rises there and breathes soulfire (blasts that hurt stone too) on the spot, then perches on the Lich's fortress and sweeps the nearest enemy's top with soulfire at the start of his next two turns. It has 60 HP while it perches (`TeamBody`, `IDamageable`). |
 | Lich | 4 | BoneHand | A bone charm; on impact or **click** a **giant skeletal hand** bursts from the ground under it, slams down on the top (a blast that drives everything downwards), then closes and sinks back for 1.3 s, **dragging down** the enemy's blocks, commander and rubble within 2.8 m (extra downward pull, and a crushing grip of 70 per second that breaks the blocks it holds; the Lich's own side is spared). |
+| Gambler | 1 | LuckyDice | Self-cast. Two dice tumble over his chamber; if **both show 3 or more** (4 in 9) a **lucky streak** (`GamblerLuck`, a TurnEffect) makes his other three weapons hit ×1.5 harder and ×1.3 wider (blast radii and pierce budgets) on his next three turns; otherwise no luck. Rolling lucky again restarts the streak, it never stacks. Bots skip the dice while a streak runs. |
+| Gambler | 2 | DeckOfFate | A human first **picks one of five face-down cards** (dealt from a 54-card deck, `GamblerChoiceUI`; the aim is held until he picks, `HumanShotController.PendingChoice`), a bot draws at the throw. The drawn card pops up over his head, then: **2–10** throw that many razor cards in a tight fan (each pierces like the Vampire's fang, budget 5: 12 a block, 6 to a commander); **Jack** a jack-in-the-box that sticks where it lands, cranks for a second and blows up (radius 3.6, 85); **Queen** a heart that homes onto the enemy commander after its apex and passes through every wall (30 to him); **King** he heals 20 and throws a sword that pierces (budget 6, 35 a block, 50 to a commander); **Ace** where a small ace strikes, a giant ace drops from 22 m like a guillotine, onto the enemy commander if he is within 3.5 m of the strike, cutting edge first through every block down to him or the ground (40 a block, 35 to a commander), and bursts there (radius 3, 30); **Joker** a jester tosses six exploding bowling pins along the aim (radius 2.4, 32 each). |
+| Gambler | 3 | CoinToss | A human **calls heads or tails** first (a bot calls at random); the coin itself does no damage. It stops where it first touches the other side and shows how it came up: if the call comes up (even chance) a **giant coin** crashes down on that spot from 22 m (budget 6, 45 a block, 70 to a commander) and sends out a shockwave (radius 3.2, 50); if not, nothing happens. |
+| Gambler | 4 | Roulette | A spinning roulette wheel saws through blocks (budget 4, 30 a block, 40 to a commander); where it stops its ball runs round and drops into a pocket of the European wheel: **red** bursts in fire (radius 2.6, 45) and sets enemy wood alight, **black** the same blast with 1.6× the push, the **green zero** (1 in 37) a jackpot (radius 4.2, 110). |
 
 Numbers live in `WeaponDefs` (Scripts/Core/Defs.cs) — the single source of truth.
 
@@ -112,8 +117,8 @@ any arena, day or night, wind on/off.
 | Weapons | Projectile (base), PiercingProjectile (shared pierce), WeaponFactory; files per class |
 | FX | VFX (particles, flashes, rings, floating text), LightningBolt, ScreenFlash |
 | Audio | SFX (SoundId, synthesis, pooled playback), Music |
-| World | ArenaBuilder (terrain, sky, sea, background per theme), FortressGenerator (blueprints), CommanderModel, ClassSkins, ClassLooks + Vampire/Alien/Dalí/Lich looks |
-| UI | UIKit (helpers), MainMenuUI, BattleHUD, IconRenderer |
+| World | ArenaBuilder (terrain, sky, sea, background per theme), FortressGenerator (blueprints), CommanderModel, ClassSkins, ClassLooks + Vampire/Alien/Dalí/Lich/Gambler looks |
+| UI | UIKit (helpers), MainMenuUI (a galaxy of planets behind the pages: SpaceBackdrop, SpacePlanet, SpaceScenery; warp page changes; starting a battle dives into its planet), BattleHUD (+ HudFX, ClickFX polish), GamblerChoiceUI, IconRenderer |
 | Util | Mats (runtime material cache), MeshKit (boxes with metre UVs, rocks, cones), ModelKit (primitive parts), TexKit (procedural textures) |
 | Debug | AutoPlaytest (`-autotest <dir>` screenshots) |
 | Editor | SiegeBuilder (project settings, fonts, base materials, GameAssets, scenes, Windows build), PhysicsProbe (fortress stability check) |

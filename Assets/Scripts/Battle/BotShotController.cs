@@ -82,9 +82,13 @@ public class BotShotController : MonoBehaviour {
         return UnityEngine.Random.value < 0.5f ? ready[ready.Count - 1] : ready[UnityEngine.Random.Range(0, ready.Count)];
     }
 
-    // A summon that is still on the battlefield would only be replaced: not worth a turn.
+    // A summon that is still on the battlefield would only be replaced, a lucky streak that is still running only
+    // renewed: not worth a turn.
     static bool Worthwhile(Fortress f, int slot) {
-        return f.Weapon(slot).id != WeaponId.BoneDragon || BoneDragon.Of(f) == null;
+        WeaponId id = f.Weapon(slot).id;
+        if (id == WeaponId.BoneDragon) return BoneDragon.Of(f) == null;
+        if (id == WeaponId.LuckyDice) return GamblerLuck.Of(f) == null;
+        return true;
     }
 
     // Where to throw: the enemy commander, except where a weapon wants something else (the skeletons are thrown in

@@ -207,7 +207,7 @@ public class BattleHUD : MonoBehaviour {
     void UpdateTutorialHint(HumanShotController human) {
         WeaponDef def = human != null ? human.Active.SelectedWeapon : null;
         bool cast = def != null && def.selfCast;
-        bool drag = def != null && !cast && !human.HasAim && human.Active.shotsFired == 0;
+        bool drag = def != null && !cast && !human.HasAim && human.Active.shotsFired == 0 && HumanShotController.ChoiceFor(human.Active) == null;
         WeaponDef wanted = cast ? def : null;
         if ((cast || drag) && wanted != tutorialFor) {   // texts are only rebuilt when the weapon changes
             tutorialFor = wanted;
@@ -339,6 +339,7 @@ public class BattleHUD : MonoBehaviour {
         canvasRoot = (RectTransform)canvas.transform;
         BuildTop();
         weaponBar = HudWeaponBar.Create(canvasRoot);
+        GamblerChoiceUI.Create(canvasRoot);   // the Gambler's face-down cards and heads-or-tails call
         BuildAimPanel();
         BuildHints();
         pauseButton = UIKit.IconButton(canvasRoot, UIIcon.Pause, UIKit.Secondary, Pause, 66f);
