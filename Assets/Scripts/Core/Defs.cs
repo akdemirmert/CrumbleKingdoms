@@ -197,7 +197,7 @@ public static class WeaponDefs {
         Add(new WeaponDef { id = WeaponId.CampaignBus, name = "Bus", title = "Campaign Bus",
             description = "The campaign bus, thrown dead straight (no arc, no wind): it blows up on what it hits.",
             cooldown = 1, minSpeed = 24, maxSpeed = 40, gravityScale = 0f, windFactor = 0f,
-            damage = 55, radius = 3f, force = 13, arc = ArcPreference.Low, color = Hex("2E86DE") });
+            damage = 40, radius = 3f, force = 13, arc = ArcPreference.Low, color = Hex("2E86DE") });   // +28 % a vote tier: 40 -> 96
         Add(new WeaponDef { id = WeaponId.Signature, name = "Signature", title = "Signature",
             description = "He signs a decree in the air with a giant pen: every enemy is silenced for a turn (he keeps only one weapon). With many votes the ink burns and the silence lasts longer.",
             selfCast = true, cooldown = 4, minSpeed = 10, maxSpeed = 20, gravityScale = 1f, windFactor = 0f,

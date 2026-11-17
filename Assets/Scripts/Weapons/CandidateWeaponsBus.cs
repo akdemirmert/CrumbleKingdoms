@@ -4,8 +4,8 @@ using UnityEngine;
 // wind, so the aim line and the bots shoot straight). Horn blaring, engine roaring, wheels spinning and smoke behind it, it
 // flies until it touches something that is not his own side's and blows up there (Explosion), flying apart: its wheels,
 // panels and loudspeaker as debris and a burst of ballot papers. His votes (CandidateVotes, read once at the throw) make it
-// grow step by step: a bigger bus (scale = Radius), a wider blast (def.radius x Radius) that hits harder (def.damage x
-// Damage); it plows through the first block it can afford (pierce cost <= 1.6 x Radius: anything but metal), smashing it,
+// grow step by step: a bigger bus (scale = Radius), a wider blast (def.radius x Radius) that hits harder (def.damage, +28 %
+// a tier: faster than his other skills, so it is mild with no votes and as hard as ever at full votes); it plows through the first block it can afford (pierce cost <= 1.6 x Radius: anything but metal), smashing it,
 // before it blows up on the next thing; from tier 1 it sheds ballot papers in flight (more every tier); from tier 3 it
 // wears a gold ram and plows through two blocks; from tier 4 gold glints follow it.
 public static class CandidateBus {
@@ -36,6 +36,7 @@ public class CandidateBusRide : Projectile {
     const float GrowTime = 0.1f;                           // it grows in out of the throw (from 40 %)
     const float WheelSpin = 900f;                          // deg/s
     const float PlowBudget = 1.6f, PlowDamage = 40f;       // x Radius, x Damage
+    const float BlastPerTier = 0.28f;                      // the blast's growth a vote tier (CandidateVotes.DamagePerTier is 0.15)
     const float PlowPush = 3f, PlowSlow = 0.85f;           // impulse on the plowed block (x sqrt mass); speed kept
     const float PaperRate = 7f;                            // ballot papers shed per second, per tier
     static readonly Vector3 BoxCentre = new Vector3(0f, -0.07f, 0f), BoxHalf = new Vector3(0.85f, 0.31f, 0.27f);
@@ -196,7 +197,7 @@ public class CandidateBusRide : Projectile {
     void Blow(Vector3 point) {
         RaiseImpact(point);
         float blast = def.radius * radiusBoost;
-        Explosion.Create(point, blast, def.damage * damageBoost, def.force, owner, DamageType.Explosion);
+        Explosion.Create(point, blast, def.damage * (1f + BlastPerTier * tier), def.force, owner, DamageType.Explosion);
         BattleCamera.Shake(0.15f + 0.04f * tier);
         VFX.Ring(point, blast * 1.15f, CandidateKit.Teal, 0.45f);
         VFX.Sparks(point, CandidateKit.Gold, 20);
