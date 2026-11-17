@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum HeroClass { Soldier, Wizard, God, Vampire, Alien, Dali, Lich, Gambler }
+public enum HeroClass { Soldier, Wizard, God, Vampire, Alien, Dali, Lich, Gambler, Candidate }
 public enum ControllerType { Human, Bot }
 public enum GameMode { Campaign, Duel }
 public enum BlockMaterial { Wood, Stone, Metal, Glass, Ice, Explosive }
@@ -19,11 +19,12 @@ public enum WeaponId {
     Ufo, RayGun, Cow, SpaceWarp,
     MustacheBirds, Anteater, MeltingClocks, PaintedSun,
     GargoyleDive, SkeletonLegion, BoneDragon, BoneHand,
-    LuckyDice, DeckOfFate, CoinToss, Roulette
+    LuckyDice, DeckOfFate, CoinToss, Roulette,
+    BallotStamp, RallyShout, CampaignBus, Signature
 }
 
 public static class Classes {
-    public const int Count = 8;   // number of HeroClass values
+    public const int Count = 9;   // number of HeroClass values
 }
 
 public static class Layers {

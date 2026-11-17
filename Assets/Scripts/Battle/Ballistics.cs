@@ -43,8 +43,11 @@ public static class Ballistics {
     }
 
     // Finds a launch velocity (speed within the weapon's range × speedScale) that hits `target`.
-    // high = prefer the steepest workable arc, otherwise the flattest one above ~12°.
+    // high = a lob: the workable arc nearest HighAngle (not the steepest one, which climbs far out of sight and hangs for
+    // seconds in the wind); otherwise the flattest one above ~12°.
     // Weapons without gravity (the ray gun) simply point straight at the target.
+    const float HighAngle = 55f;
+
     public static bool Solve(Vector3 origin, Vector3 target, WeaponDef def, float windAccel, bool high, out Vector3 velocity, float speedScale = 1f) {
         if (def.gravityScale <= 0.001f) {
             Vector3 to = target - origin;
@@ -68,7 +71,8 @@ public static class Ballistics {
                 if (float.IsNaN(h) || h < target.y) lo = mid; else hi = mid;
             }
             float speed = (lo + hi) * 0.5f;
-            bool better = bestAngle < 0f || (high ? angle > bestAngle : (angle >= 12f && (bestAngle < 12f || angle < bestAngle)));
+            bool better = bestAngle < 0f || (high ? Mathf.Abs(angle - HighAngle) < Mathf.Abs(bestAngle - HighAngle)
+                                                  : (angle >= 12f && (bestAngle < 12f || angle < bestAngle)));
             if (better) { bestAngle = angle; bestSpeed = speed; }
         }
         if (bestAngle < 0f) {

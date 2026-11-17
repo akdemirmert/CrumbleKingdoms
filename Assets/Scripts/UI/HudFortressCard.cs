@@ -7,7 +7,8 @@ using UnityEngine.UI;
 // integrity (with the defeat threshold marked). Glows while this fortress is shooting; greys out with a
 // skull once it is defeated (and comes back if Dalí's clocks rewind the defeat). Under the card, status
 // chips show the lasting effects on this fortress (TurnEffect.StatusOn) and "Slowed" while its throws are
-// weakened. Reads the fortress every frame, so it never misses a change.
+// weakened; an effect with a meter (the Candidate's votes) gets a big bar of its own above them. Reads the
+// fortress every frame, so it never misses a change.
 public class HudFortressCard : MonoBehaviour {
     public const float Height = 108f;
     const float ChipHeight = 28f, ChipGap = 6f;
@@ -19,8 +20,11 @@ public class HudFortressCard : MonoBehaviour {
     Image glow;
     CanvasGroup group;
     GameObject skull;
-    RectTransform body, chipRow;
+    RectTransform root, body, chipRow;
+    float cardWidth;
     readonly List<Chip> chips = new List<Chip>();
+    Meter meter;
+    bool meterShown;
     int shownHP = -1, shownWall = -1;
     bool defeatedShown;
     float lift;
@@ -39,6 +43,8 @@ public class HudFortressCard : MonoBehaviour {
     }
 
     void Build(RectTransform root, float width, float defeatIntegrity) {
+        this.root = root;
+        cardWidth = width;
         Color team = fortress.TeamColor;
         body = UIKit.Rect(root, "Body").Fill();
         glow = UIKit.Img(body, UIKit.Shadow, UIKit.Alpha(team, 0f), "Glow");
@@ -125,21 +131,37 @@ public class HudFortressCard : MonoBehaviour {
         wallBar.SetColors(on ? UIKit.Disabled : WallColor, on ? UIKit.Disabled : UIKit.Danger);
     }
 
-    // One chip per lasting effect shown on this fortress, plus "Slowed". Chips are pooled and texts are only
-    // reassigned when they change, so the per-frame poll does not allocate.
+    // One chip per lasting effect shown on this fortress, plus "Slowed"; the first effect with a meter goes to the big bar
+    // instead, and the chips move down under it. Chips are pooled and texts are only reassigned when they change, so the
+    // per-frame poll does not allocate.
     void UpdateChips() {
         int used = 0;
+        bool metered = false;
         if (!fortress.defeated) {
             List<TurnEffect> effects = TurnEffect.All;
             for (int i = 0; i < effects.Count; i++) {
                 TurnEffect e = effects[i];
                 if (e == null || e.StatusOn != fortress) continue;
                 string text = e.StatusText;
-                if (!string.IsNullOrEmpty(text)) GetChip(used++).Show(text, e.StatusColor);
+                if (string.IsNullOrEmpty(text)) continue;
+                float m = e.StatusMeter;
+                if (m >= 0f && !metered) {
+                    metered = true;
+                    meter ??= Meter.Create(root, cardWidth);
+                    meter.Show(text, e.StatusColor, m);
+                } else GetChip(used++).Show(text, e.StatusColor);
             }
             if (fortress.launchSpeedScale < 0.999f) GetChip(used++).Show("Slowed", SlowColor);
         }
         for (int i = used; i < chips.Count; i++) chips[i].Hide();
+        if (meter != null) {
+            if (!metered) meter.Hide();
+            meter.Tick();
+        }
+        if (metered != meterShown) {
+            meterShown = metered;
+            chipRow.anchoredPosition = new Vector2(4f, -8f - ChipHeight - (metered ? Meter.Height + 8f : 0f));
+        }
     }
 
     Chip GetChip(int index) {
@@ -182,5 +204,117 @@ public class HudFortressCard : MonoBehaviour {
         }
 
         public void Hide() { if (root.activeSelf) root.SetActive(false); }
+    }
+
+    // The big bar under the card for an effect with a meter (the Candidate's votes): a square-cornered box, a dark well with
+    // a sharp frame in the effect's colour, a fill that eases up to the value (lit along its top, shaded along its foot),
+    // marks every fifth that turn gold once passed, the effect's text on the left and the percent on the right. Passing a
+    // mark makes it pulse, its frame flare and a shine run across.
+    class Meter {
+        public const float Height = 32f;
+        const int Marks = 4;          // at 20, 40, 60 and 80 %
+        const float Edge = 2f;        // frame width
+        static readonly Color MarkGold = WeaponDefs.Hex("FFD34D");
+
+        RectTransform rt, fill;
+        Image back, fillImage;
+        readonly Image[] frame = new Image[4];
+        readonly Image[] marks = new Image[Marks];
+        TextMeshProUGUI label, value;
+        UISweep sweep;
+        Color color = Color.clear;
+        string text;
+        float shown, target, pulse;
+        int passed, shownPercent = -1;
+
+        public static Meter Create(RectTransform card, float width) {
+            Meter m = new Meter();
+            m.rt = UIKit.Rect(card, "Meter").Place(Vector2.zero, new Vector2(4f, -8f - Height), new Vector2(width - 8f, Height));
+            m.back = UIKit.Img(m.rt, null, Color.black, "Back");   // no sprite: square corners everywhere
+            m.back.rectTransform.Fill();
+            RectTransform well = UIKit.Rect(m.rt, "Well").Fill(Edge + 2f, Edge + 2f, Edge + 2f, Edge + 2f);
+            m.fillImage = UIKit.Img(well, null, Color.white, "Fill");
+            m.fill = m.fillImage.rectTransform;
+            m.fill.anchorMin = Vector2.zero;
+            m.fill.anchorMax = new Vector2(0f, 1f);
+            m.fill.offsetMin = m.fill.offsetMax = Vector2.zero;
+            Band(m.fill, 0.62f, 1f, new Color(1f, 1f, 1f, 0.24f), "Lit");      // the top of the fill catches the light
+            Band(m.fill, 0f, 0.22f, new Color(0f, 0f, 0f, 0.25f), "Shade");     // its foot is in shadow
+            for (int i = 0; i < Marks; i++) {
+                float x = (i + 1) / (float)(Marks + 1);
+                m.marks[i] = Strip(well, new Vector2(x, 0f), new Vector2(x, 1f), new Vector2(0.5f, 0.5f), new Vector2(2f, 0f));
+            }
+            m.frame[0] = Strip(m.rt, new Vector2(0f, 1f), Vector2.one, new Vector2(0.5f, 1f), new Vector2(0f, Edge));
+            m.frame[1] = Strip(m.rt, Vector2.zero, new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, Edge));
+            m.frame[2] = Strip(m.rt, Vector2.zero, new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(Edge, 0f));
+            m.frame[3] = Strip(m.rt, new Vector2(1f, 0f), Vector2.one, new Vector2(1f, 0.5f), new Vector2(Edge, 0f));
+            m.label = UIKit.Title(m.rt, "", 19f, Color.white, TextAlignmentOptions.Left);
+            m.label.rectTransform.Fill(14f, 0f, 70f, 0f);
+            m.value = UIKit.Title(m.rt, "", 21f, MarkGold, TextAlignmentOptions.Right);
+            m.value.rectTransform.Fill(70f, 0f, 12f, 0f);
+            m.sweep = UISweep.Create(m.rt, Edge, new Color(1f, 1f, 1f, 0.45f));
+            foreach (Graphic g in m.rt.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+            return m;
+        }
+
+        // A plain (square) image stretched along its anchors.
+        static Image Strip(RectTransform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 size) {
+            Image i = UIKit.Img(parent, null, Color.white, "Edge");
+            RectTransform r = i.rectTransform;
+            r.anchorMin = anchorMin;
+            r.anchorMax = anchorMax;
+            r.pivot = pivot;
+            r.sizeDelta = size;
+            r.anchoredPosition = Vector2.zero;
+            return i;
+        }
+
+        // A full-width band of the fill between two heights (0..1).
+        static void Band(RectTransform fill, float from, float to, Color c, string name) {
+            Image i = UIKit.Img(fill, null, c, name);
+            i.rectTransform.anchorMin = new Vector2(0f, from);
+            i.rectTransform.anchorMax = new Vector2(1f, to);
+            i.rectTransform.offsetMin = i.rectTransform.offsetMax = Vector2.zero;
+        }
+
+        public void Show(string t, Color c, float meter01) {
+            if (!rt.gameObject.activeSelf) {
+                rt.gameObject.SetActive(true);
+                shown = Mathf.Clamp01(meter01);   // appears at its value, without a pulse for every mark below it
+                passed = Mathf.FloorToInt(shown * (Marks + 1) + 1e-4f);
+            }
+            target = Mathf.Clamp01(meter01);
+            if (t != text) { text = t; label.text = t.ToUpperInvariant(); }
+            if (c != color) {
+                color = c;
+                back.color = UIKit.Alpha(UIKit.Darken(c, 0.82f), 0.95f);
+                fillImage.color = c;
+            }
+            int percent = Mathf.FloorToInt(target * 100f + 1e-3f);
+            if (percent != shownPercent) { shownPercent = percent; value.text = percent + "%"; }
+        }
+
+        public void Hide() { if (rt.gameObject.activeSelf) rt.gameObject.SetActive(false); }
+
+        public void Tick() {
+            if (!rt.gameObject.activeSelf) return;
+            shown = Mathf.Abs(target - shown) < 0.001f ? target : Mathf.Lerp(shown, target, UIKit.Approach(4f));
+            fill.anchorMax = new Vector2(shown, 1f);
+            fill.offsetMax = Vector2.zero;
+            fillImage.enabled = shown > 0.01f;
+            int now = Mathf.FloorToInt(shown * (Marks + 1) + 1e-4f);
+            if (now > passed) {   // a new mark (a new tier of votes): pulse, glow and a shine across
+                passed = now;
+                pulse = 1f;
+                sweep.Play();
+            }
+            for (int i = 0; i < Marks; i++) marks[i].color = i < passed ? MarkGold : new Color(0f, 0f, 0f, 0.45f);
+            pulse = Mathf.MoveTowards(pulse, 0f, Time.unscaledDeltaTime * 1.6f);
+            float s = 1f + 0.06f * pulse * pulse;
+            rt.localScale = new Vector3(s, s, 1f);
+            Color edge = Color.Lerp(UIKit.Lighten(color, 0.35f), MarkGold, pulse);
+            for (int i = 0; i < frame.Length; i++) frame[i].color = edge;
+            fillImage.color = Color.Lerp(color, Color.white, 0.5f * pulse);
+        }
     }
 }

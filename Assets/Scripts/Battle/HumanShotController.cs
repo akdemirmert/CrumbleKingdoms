@@ -41,7 +41,7 @@ public class HumanShotController : MonoBehaviour {
         HasAim = false;
         AngleDeg = f.lastAimAngle;
         Power01 = f.lastAimPower;
-        if (!f.IsReady(f.selectedSlot)) f.selectedSlot = 0;
+        if (!f.IsReady(f.selectedSlot)) f.selectedSlot = f.FirstReadySlot();
         WeaponSelected?.Invoke(f.selectedSlot);
         while (!finished && f.CommanderAlive) yield return null;   // a commander who dies while aiming ends the turn unfired
         Active = null;

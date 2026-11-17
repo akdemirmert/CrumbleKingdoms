@@ -176,7 +176,7 @@ public class SkeletonWarrior : Projectile {
     const float RunSpeed = 3.6f, ClimbSpeed = 2.4f, RiseTime = 0.55f;
     const float Reach = 0.4f;                    // it stands this far from the wall face it strikes
     const float StrikeHeight = 0.85f;            // its sword arm, above its feet
-    const float CommanderDamage = 30f;
+    const float CommanderDamage = 50f;
     const float TearTime = 0.4f, TearSpeed = 5f, TearAccel = 40f;   // the wrench that pulls its block out of the wall
     const int Swings = 3;
     const float SwingTime = 0.26f;

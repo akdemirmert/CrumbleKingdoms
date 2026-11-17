@@ -10,7 +10,7 @@ using UnityEngine;
 //    def.damage and stops it. In the sea it just sinks.
 public class GargoyleDive : Projectile {
     const float Mass = 4f, Radius = 0.38f;
-    const float StoneShare = 0.6f, BlastShare = 0.5f;
+    const float StoneShare = 0.6f, BlastShare = 0.8f;
     const float DiveSpeed = 28f, DiveGravity = 2.2f, KeepSideways = 0.08f;
     const int MaxBreakThroughs = 2;
     const float BreakThroughKeep = 0.7f;

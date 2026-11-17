@@ -78,21 +78,28 @@ public struct PlayingCard {
         }
     }
 
-    public static PlayingCard Random() { return FromIndex(UnityEngine.Random.Range(0, DeckSize)); }
+    public const int Kinds = 6;   // a number card (2-10), Jack, Queen, King, Ace, Joker
 
-    // n different cards off the top of a freshly shuffled deck.
-    public static PlayingCard[] Deal(int n) {
-        n = Mathf.Clamp(n, 0, DeckSize);
-        int[] deck = new int[DeckSize];
-        for (int i = 0; i < DeckSize; i++) deck[i] = i;
-        PlayingCard[] hand = new PlayingCard[n];
-        for (int i = 0; i < n; i++) {
-            int k = UnityEngine.Random.Range(i, DeckSize);
-            (deck[i], deck[k]) = (deck[k], deck[i]);
-            hand[i] = FromIndex(deck[i]);
+    // One card of each kind, shuffled: a number card of any rank, the four picture cards and aces in any suit, a joker
+    // of either colour. Picking one of them face down gives every kind the same 1-in-6 chance.
+    public static PlayingCard[] DealOneOfEach() {
+        PlayingCard[] hand = {
+            new PlayingCard((CardRank)UnityEngine.Random.Range((int)CardRank.Two, (int)CardRank.Ten + 1), AnySuit()),
+            new PlayingCard(CardRank.Jack, AnySuit()), new PlayingCard(CardRank.Queen, AnySuit()),
+            new PlayingCard(CardRank.King, AnySuit()), new PlayingCard(CardRank.Ace, AnySuit()),
+            new PlayingCard(CardRank.Joker, UnityEngine.Random.value < 0.5f ? CardSuit.Spades : CardSuit.Hearts),
+        };
+        for (int i = hand.Length - 1; i > 0; i--) {
+            int k = UnityEngine.Random.Range(0, i + 1);
+            (hand[i], hand[k]) = (hand[k], hand[i]);
         }
         return hand;
     }
+
+    // A card drawn the same way without the fan (a bot's throw): every kind at the same odds.
+    public static PlayingCard DrawKind() { return DealOneOfEach()[UnityEngine.Random.Range(0, Kinds)]; }
+
+    static CardSuit AnySuit() { return (CardSuit)UnityEngine.Random.Range(0, 4); }
 
     public override string ToString() { return Name; }
 }
@@ -127,9 +134,10 @@ public class GamblerHand : MonoBehaviour {
     public void Pick(PlayingCard card) { Card = card; HasCard = true; }
     public void Call(bool heads) { CallHeads = heads; HasCall = true; }
 
-    // The card thrown now: the one picked, or a fresh draw (a bot). It leaves the hand.
+    // The card thrown now: the one picked, or a fresh draw (a bot: every kind at the same odds, as from the fan). It
+    // leaves the hand.
     public PlayingCard TakeCard() {
-        PlayingCard c = ForcedCard >= 0 ? PlayingCard.FromIndex(ForcedCard) : HasCard ? Card : PlayingCard.Random();
+        PlayingCard c = ForcedCard >= 0 ? PlayingCard.FromIndex(ForcedCard) : HasCard ? Card : PlayingCard.DrawKind();
         HasCard = false;
         return c;
     }

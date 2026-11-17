@@ -3,8 +3,9 @@ using UnityEngine;
 // The Alien's Flying Cow: a heavy (5 kg), bouncy cow that tumbles head over heels. It moos when it is thrown
 // and again when it first lands. Every hard bounce on an enemy block or commander deals def.damage scaled by
 // the impact speed; a block it destroys does not stop it (it keeps most of its speed, twice at most). Its part
-// of the turn ends SettleTime after the first impact or once it lies still; then a small saucer comes and beams
-// it back up (AlienCowPickup). A cow that lands in the sea just sinks.
+// of the turn ends SettleTime after the first impact or once it lies still: there it blows up ("MOO-BOOM!", a blast
+// of BlastRadius / BlastDamage), and then a small saucer comes and beams the sooty cow back up (AlienCowPickup). A cow
+// that lands in the sea just sinks.
 public class AlienCow : Projectile {
     const float Mass = 5f;
     const float MinHitSpeed = 3f, FullDamageSpeed = 22f, MaxDamageScale = 1.4f;
@@ -12,6 +13,7 @@ public class AlienCow : Projectile {
     const int MaxBreakThroughs = 2;
     const float SettleTime = 2.5f, SlowSpeed = 1.2f;
     const float HitCooldown = 0.25f;         // one bounce on one target counts once
+    const float BlastRadius = 3f, BlastDamage = 60f, BlastForce = 13f;   // where it comes to rest
 
     static PhysicsMaterial hide;
 
@@ -102,8 +104,12 @@ public class AlienCow : Projectile {
     }
 
     void Settle() {
+        Vector3 p = transform.position;
+        p.z = 0f;
+        Explosion.Create(p, BlastRadius, BlastDamage, BlastForce, owner, DamageType.Explosion, BlastStyle.Fire);
+        VFX.FloatingText(p + Vector3.up * 1.6f, "MOO-BOOM!", new Color(1f, 0.85f, 0.4f), 1.3f);
         Finish(false);
-        AlienSounds.Play(AlienSounds.Moo, transform.position, 0.55f, 1.45f);
+        AlienSounds.Play(AlienSounds.Moo, p, 0.55f, 1.45f);
         AlienCowPickup.Begin(this);
     }
 

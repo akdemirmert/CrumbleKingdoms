@@ -6,9 +6,10 @@ using UnityEngine.UI;
 
 // The Gambler's questions before he aims (HumanShotController.PendingChoice = GamblerHand.Prompt), put in the HUD to
 // the human whose turn it is:
-//   Deck of Fate    a fan of five face-down cards above the weapon bar. He clicks one (or presses Q W E R T): it is his
-//                   at once (that unlocks the aim) and turns over, the other four follow, dimmed, to show what he
-//                   missed, and the fan slides away.
+//   Deck of Fate    a fan of six face-down cards above the weapon bar, one of each kind (a number card, Jack, Queen,
+//                   King, Ace, Joker) in a shuffled order. He clicks one (or presses Q W E R T Y): it is his at once
+//                   (that unlocks the aim) and turns over, the other five follow, dimmed, to show what he missed, and
+//                   the fan slides away.
 //   Heads or Tails  two gold coins, HEADS and TAILS (or H / T).
 // Answered, a chip left of the weapon bar keeps showing what he holds (the card and what it does, or his call) while
 // he aims. Polls BattleManager every frame like BattleHUD and shows nothing unless a human is aiming (a bot never
@@ -20,7 +21,7 @@ public class GamblerChoiceUI : MonoBehaviour {
     const float PanelY = 282f, PanelH = 330f;   // above the first-shot drag hint (y 214-272), which returns once he has answered
     const float DealTime = 0.32f, DealStagger = 0.07f, FlipTime = 0.25f, OthersAfter = 0.35f, OthersStagger = 0.06f;
     const float RevealTime = 1.6f, CallHold = 0.45f;   // how long the answer stays up (unless he starts aiming first)
-    static readonly Key[] CardKeys = { Key.Q, Key.W, Key.E, Key.R, Key.T };   // not 1-4 (weapons), Space/Enter (fire), Esc
+    static readonly Key[] CardKeys = { Key.Q, Key.W, Key.E, Key.R, Key.T, Key.Y };   // not 1-4 (weapons), Space/Enter (fire), Esc
     static readonly Color Table = UIKit.Alpha(UIKit.Darken(GamblerKit.Felt, 0.38f), 0.94f);   // the question panels are felt
     static readonly Color CoinInk = new Color(0.52f, 0.33f, 0.07f);                            // engraving on the gold coins
 
@@ -38,7 +39,7 @@ public class GamblerChoiceUI : MonoBehaviour {
         public CanvasGroup group;
     }
 
-    readonly CardView[] cards = new CardView[5];
+    readonly CardView[] cards = new CardView[PlayingCard.Kinds];
     readonly CoinView[] coins = new CoinView[2];   // heads, tails
     UIFade fanFade, coinFade, cardChipFade, callChipFade;
     CanvasGroup fanGroup, coinGroup;
@@ -108,12 +109,12 @@ public class GamblerChoiceUI : MonoBehaviour {
         Set(callChipFade, showCall);
     }
 
-    // A fresh fan for `f`: five cards off a shuffled deck, face down, dealt in one after another.
+    // A fresh fan for `f`: one card of each kind in a shuffled order, face down, dealt in one after another.
     void Deal(Fortress f) {
         fanFor = f;
         picked = -1;
         dealtAt = Time.unscaledTime;
-        PlayingCard[] dealt = PlayingCard.Deal(cards.Length);
+        PlayingCard[] dealt = PlayingCard.DealOneOfEach();
         for (int i = 0; i < cards.Length; i++) {
             CardView c = cards[i];
             c.card = dealt[i];
@@ -127,8 +128,9 @@ public class GamblerChoiceUI : MonoBehaviour {
         GamblerSounds.Play(GamblerSounds.Shuffle, null, 0.5f);
     }
 
-    // His card is his at once (that unlocks the aim); it turns over, then the four he did not take.
-    void PickCard(int i) {
+    // His card is his at once (that unlocks the aim); it turns over, then the five he did not take. Public for the
+    // automated playtest, like the shot controller's Simulate calls.
+    public void PickCard(int i) {
         if (picked >= 0 || fanFor == null || !fanFade.Visible) return;
         picked = i;
         pickedAt = Time.unscaledTime;
@@ -191,7 +193,8 @@ public class GamblerChoiceUI : MonoBehaviour {
         }
     }
 
-    void CallCoin(bool heads) {
+    // Public for the automated playtest too.
+    public void CallCoin(bool heads) {
         if (callAt >= 0f || coinFor == null || !coinFade.Visible) return;
         callAt = Time.unscaledTime;
         callUntil = callAt + CallHold;
@@ -236,17 +239,17 @@ public class GamblerChoiceUI : MonoBehaviour {
 
     // ------------------------------------------------------------------ building
     void BuildFan(RectTransform root) {
-        RectTransform panel = QuestionPanel(root, "Cards", 720f, "Pick a card", out fanFade, out fanGroup);
+        RectTransform panel = QuestionPanel(root, "Cards", 840f, "Pick a card", out fanFade, out fanGroup);
         result = UIKit.Title(panel, "", 30f, UIKit.TextColor);
         result.AutoSize(18f, 30f);
-        result.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0f, 20f), new Vector2(680f, 42f));
+        result.rectTransform.Place(new Vector2(0.5f, 0f), new Vector2(0f, 20f), new Vector2(800f, 42f));
         RectTransform fan = UIKit.Rect(panel, "Fan").Place(new Vector2(0.5f, 0f), new Vector2(0f, 164f), Vector2.zero);
         for (int i = 0; i < cards.Length; i++) cards[i] = BuildCard(fan, i);
     }
 
     CardView BuildCard(RectTransform fan, int i) {
         CardView c = new CardView();
-        int k = i - 2;
+        float k = i - (cards.Length - 1) * 0.5f;   // places from the middle of the fan
         Image hit = UIKit.Img(fan, null, Color.clear, "Card " + CardKeys[i]);
         hit.raycastTarget = true;
         c.slot = hit.rectTransform;

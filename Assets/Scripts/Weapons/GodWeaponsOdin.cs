@@ -5,7 +5,7 @@ using UnityEngine;
 // in. Odin's ravens Huginn and Muninn circle it in flight. Where it finally stops, a holy burst.
 public class GungnirSpear : PiercingProjectile {
     const float HomingTurnRate = 110f;                         // degrees per second
-    const float HolyRadius = 2.2f, HolyDamage = 30f, HolyForce = 8f;
+    const float HolyRadius = 2.2f, HolyDamage = 14f, HolyForce = 8f;
     const float IconScale = 0.6f;                              // menu/icon model ~1 m; the thrown spear is 1.7 m
     const float RavenOrbitSpeed = 420f;                        // degrees per second around the shaft
 

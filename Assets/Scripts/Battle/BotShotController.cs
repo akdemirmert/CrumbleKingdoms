@@ -78,16 +78,17 @@ public class BotShotController : MonoBehaviour {
         if (GameSession.ForcedSlot >= 0 && f.IsReady(GameSession.ForcedSlot)) return GameSession.ForcedSlot;
         List<int> ready = new List<int>();
         for (int i = 0; i < 4; i++) if (f.IsReady(i) && Worthwhile(f, i)) ready.Add(i);
-        if (ready.Count == 0) return 0;
+        if (ready.Count == 0) return f.FirstReadySlot();
         return UnityEngine.Random.value < 0.5f ? ready[ready.Count - 1] : ready[UnityEngine.Random.Range(0, ready.Count)];
     }
 
-    // A summon that is still on the battlefield would only be replaced, a lucky streak that is still running only
-    // renewed: not worth a turn.
+    // A summon that is still on the battlefield would only be replaced, a lucky streak or a shield that is still there
+    // only renewed: not worth a turn.
     static bool Worthwhile(Fortress f, int slot) {
         WeaponId id = f.Weapon(slot).id;
         if (id == WeaponId.BoneDragon) return BoneDragon.Of(f) == null;
         if (id == WeaponId.LuckyDice) return GamblerLuck.Of(f) == null;
+        if (id == WeaponId.RallyShout) return CandidateShield.On(f) == null;
         return true;
     }
 

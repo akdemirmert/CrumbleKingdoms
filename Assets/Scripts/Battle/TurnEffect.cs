@@ -35,5 +35,6 @@ public abstract class TurnEffect : MonoBehaviour {
     // HUD status chip on a fortress card, e.g. "Cloak 2" or "Sun 3". Null = not shown.
     public virtual string StatusText => null;
     public virtual Color StatusColor => Color.white;
+    public virtual float StatusMeter => -1f;   // 0..1 adds a small bar to the chip (the Candidate's votes); < 0 = none
     public virtual Fortress StatusOn => target != null ? target : owner;   // whose card shows the chip
 }

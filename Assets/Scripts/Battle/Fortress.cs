@@ -121,7 +121,14 @@ public class Fortress : MonoBehaviour {
 
     public void TickCooldowns() {
         for (int i = 0; i < 4; i++) if (cooldowns[i] > 0) cooldowns[i]--;
-        if (!IsReady(selectedSlot)) selectedSlot = 0;
+        if (!IsReady(selectedSlot)) selectedSlot = FirstReadySlot();
+    }
+
+    // The first weapon that can be fired now (slot 0 if none can). Not always slot 0: Lucky Guy's first weapon, his
+    // dice, cools down.
+    public int FirstReadySlot() {
+        for (int i = 0; i < 4; i++) if (IsReady(i)) return i;
+        return 0;
     }
 
     // Cooldown N = the weapon skips the owner's next N turns.

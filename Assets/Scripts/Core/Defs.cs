@@ -41,21 +41,21 @@ public static class WeaponDefs {
         Add(new WeaponDef { id = WeaponId.GrapplingHook, name = "Hook", title = "Grappling Hook",
             description = "A hook on a rope: it catches the first block or commander it hits and yanks it out towards you.",
             cooldown = 0, minSpeed = 16, maxSpeed = 40, gravityScale = 0.8f, windFactor = 0.3f,
-            damage = 20, force = 14, arc = ArcPreference.Low, color = Hex("C9B07A") });
+            damage = 32, force = 18, arc = ArcPreference.Low, color = Hex("C9B07A") });
         Add(new WeaponDef { id = WeaponId.Bomb, name = "Bomb", title = "Fuse Bomb",
             description = "Bouncing fuse bomb with a big blast. Click to detonate it early.",
             activateHint = "Click to DETONATE",
             cooldown = 1, minSpeed = 12, maxSpeed = 33, gravityScale = 1f, windFactor = 0.8f,
-            damage = 95, radius = 3.6f, force = 14, arc = ArcPreference.Low, color = Hex("FF8A3D") });   // a high lob outlasts the fuse
+            damage = 150, radius = 5f, force = 14, arc = ArcPreference.Low, color = Hex("FF8A3D") });   // a high lob outlasts the fuse
         Add(new WeaponDef { id = WeaponId.Drone, name = "Drone", title = "Kamikaze Drone",
             description = "An explosive drone that follows your mouse in flight. Click to blow it up; it also explodes on contact.",
             activateHint = "Steer with the MOUSE, click to BLOW UP",
             cooldown = 2, minSpeed = 10, maxSpeed = 26, gravityScale = 0.6f, windFactor = 0f,
-            damage = 55, radius = 2.4f, force = 10, arc = ArcPreference.Low, color = Hex("5ED0FF") });
+            damage = 88, radius = 3.4f, force = 10, arc = ArcPreference.Low, color = Hex("5ED0FF") });
         Add(new WeaponDef { id = WeaponId.Airstrike, name = "Airstrike", title = "Airstrike",
             description = "Throw a red smoke flare: a bomber sweeps over and drops a row of five bombs across it.",
             cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 1f, windFactor = 0.5f,
-            damage = 40, radius = 2.4f, force = 9, arc = ArcPreference.Any, color = Hex("FF4B3E") });
+            damage = 64, radius = 3.4f, force = 9, arc = ArcPreference.Any, color = Hex("FF4B3E") });
         // ---------------------------------------------------------------- Wizard
         Add(new WeaponDef { id = WeaponId.Fireball, name = "Fireball", title = "Fireball",
             description = "Explodes on contact and sets wood ablaze. Fire spreads to touching wood.",
@@ -93,7 +93,7 @@ public static class WeaponDefs {
         Add(new WeaponDef { id = WeaponId.Gungnir, name = "Odin", title = "Odin — Gungnir",
             description = "The spear that never misses: homes onto a commander and pierces everything.",
             cooldown = 3, minSpeed = 18, maxSpeed = 40, gravityScale = 0.75f, windFactor = 0f,
-            damage = 65, pierce = 99f, arc = ArcPreference.High, color = Hex("FFD24A") });
+            damage = 30, pierce = 99f, arc = ArcPreference.High, color = Hex("FFD24A") });   // it never misses, so it hits gently (with the burst ~40)
         // ---------------------------------------------------------------- Vampire
         Add(new WeaponDef { id = WeaponId.BatSwarm, name = "Bats", title = "Bat Swarm",
             description = "A swarm of bats dives at the enemy's blocks; the bats that go for the commander bite their way through his walls.",
@@ -153,28 +153,28 @@ public static class WeaponDefs {
             description = "A stone gargoyle. Click and it wakes, folds its wings and dives straight down, smashing through up to two roof blocks.",
             activateHint = "Click to DIVE",
             cooldown = 0, minSpeed = 14, maxSpeed = 36, gravityScale = 0.9f, windFactor = 0.6f,
-            damage = 8, radius = 1.6f, force = 5, pierce = 3.2f, arc = ArcPreference.High, color = Hex("A9B8A2") });
+            damage = 20, radius = 2.2f, force = 6, pierce = 3.2f, arc = ArcPreference.High, color = Hex("A9B8A2") });
         Add(new WeaponDef { id = WeaponId.SkeletonLegion, name = "Skeletons", title = "Skeleton Legion",
             description = "A tombstone on the enemy's island: three skeletons climb his wall and tear out a block each. Through an open wall they go for the commander.",
             cooldown = 2, minSpeed = 12, maxSpeed = 32, gravityScale = 1f, windFactor = 0.5f,
-            damage = 140, arc = ArcPreference.Any, color = Hex("E3DCC2") });   // per skeleton, over its three swings
+            damage = 200, arc = ArcPreference.Any, color = Hex("E3DCC2") });   // per skeleton, over its three swings
         Add(new WeaponDef { id = WeaponId.BoneDragon, name = "Dragon", title = "Bone Dragon",
             description = "A dragon skull: where it lands (or on a click) the bone dragon rises and breathes soulfire, then perches on your fortress and strikes again on your next two turns.",
             activateHint = "Click to RAISE the dragon",
             cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 0.8f, windFactor = 0.6f,
-            damage = 16, radius = 1.7f, force = 6, arc = ArcPreference.Any, color = Hex("7DFF6A") });
+            damage = 28, radius = 2.2f, force = 7, arc = ArcPreference.Any, color = Hex("7DFF6A") });
         Add(new WeaponDef { id = WeaponId.BoneHand, name = "Bone Hand", title = "Bone Hand",
             description = "A bone charm: where it lands (or on a click) a giant skeletal hand bursts from the ground, slams down on what stands there and drags everything down with it.",
             activateHint = "Click to RAISE the hand",
             cooldown = 3, minSpeed = 12, maxSpeed = 32, gravityScale = 1f, windFactor = 0.5f,
-            damage = 45, radius = 2.8f, force = 10, arc = ArcPreference.Any, color = Hex("B8FF7A") });
+            damage = 70, radius = 3.2f, force = 11, arc = ArcPreference.Any, color = Hex("B8FF7A") });
         // ---------------------------------------------------------------- Gambler
         Add(new WeaponDef { id = WeaponId.LuckyDice, name = "Dice", title = "Loaded Dice",
             description = "Roll two dice. If both show 3 or more, your other three weapons hit harder and wider for your next three turns. If not, no luck.",
             selfCast = true, cooldown = 2, minSpeed = 10, maxSpeed = 20, gravityScale = 1f, windFactor = 0f,
             damage = 0, arc = ArcPreference.Any, color = Hex("F2EEE3") });
         Add(new WeaponDef { id = WeaponId.DeckOfFate, name = "Cards", title = "Deck of Fate",
-            description = "Pick a face-down card, then throw it. 2-10: that many razor cards fan out. Jack: a jack-in-the-box. Queen: a heart that seeks the commander. King: a sword, and he heals. Ace: a giant card drops like a blade. Joker: a juggler hurls exploding pins.",
+            description = "Pick one of six face-down cards, one of each kind, then throw it. 2-10: that many razor cards fan out. Jack: a jack-in-the-box. Queen: a heart that seeks the commander. King: a sword, and he heals. Ace: a giant card drops like a blade. Joker: a juggler hurls exploding pins.",
             cooldown = 0, minSpeed = 16, maxSpeed = 40, gravityScale = 0.6f, windFactor = 0.3f,
             damage = 12, pierce = 5f, arc = ArcPreference.Low, color = Hex("E2343F") });   // damage, pierce: one razor card (a fang's budget)
         Add(new WeaponDef { id = WeaponId.CoinToss, name = "Coin", title = "Heads or Tails",
@@ -185,6 +185,23 @@ public static class WeaponDefs {
             description = "A spinning roulette wheel saws through up to four blocks, then its ball drops into a pocket and bursts: red sets wood ablaze, black hits harder, green zero is the jackpot.",
             cooldown = 2, minSpeed = 14, maxSpeed = 36, gravityScale = 0.8f, windFactor = 0.4f,
             damage = 30, radius = 2.6f, force = 10, pierce = 4f, arc = ArcPreference.Low, color = Hex("1FA35C") });
+        // ---------------------------------------------------------------- Candidate (every skill grows with his votes: CandidateVotes)
+        Add(new WeaponDef { id = WeaponId.BallotStamp, name = "Stamp", title = "Ballot Stamp",
+            description = "A voting stamp: where it lands a giant stamp comes down from the sky, cuts through the roof and leaves its mark in an ink blast.",
+            cooldown = 0, minSpeed = 12, maxSpeed = 34, gravityScale = 1f, windFactor = 0.5f,
+            damage = 30, radius = 2.6f, force = 10, pierce = 4f, arc = ArcPreference.High, color = Hex("8E5BE8") });   // the giant stamp; lobbed onto the roof
+        Add(new WeaponDef { id = WeaponId.RallyShout, name = "Shout", title = "Rally Shout",
+            description = "He shouts at the nearest enemy: the wave shoves his fortress about (no damage) and echoes back as a shield that blocks one enemy hit or lasts two turns.",
+            selfCast = true, cooldown = 2, minSpeed = 10, maxSpeed = 20, gravityScale = 1f, windFactor = 0f,
+            damage = 0, radius = 6f, force = 9, arc = ArcPreference.Any, color = Hex("FF9F43") });   // radius, force: the shove
+        Add(new WeaponDef { id = WeaponId.CampaignBus, name = "Bus", title = "Campaign Bus",
+            description = "The campaign bus, thrown dead straight (no arc, no wind): it blows up on what it hits.",
+            cooldown = 1, minSpeed = 24, maxSpeed = 40, gravityScale = 0f, windFactor = 0f,
+            damage = 55, radius = 3f, force = 13, arc = ArcPreference.Low, color = Hex("2E86DE") });
+        Add(new WeaponDef { id = WeaponId.Signature, name = "Signature", title = "Signature",
+            description = "He signs a decree in the air with a giant pen: every enemy is silenced for a turn (he keeps only one weapon). With many votes the ink burns and the silence lasts longer.",
+            selfCast = true, cooldown = 4, minSpeed = 10, maxSpeed = 20, gravityScale = 1f, windFactor = 0f,
+            damage = 3.5f, arc = ArcPreference.Any, color = Hex("F5C04A") });   // damage: ink burn per vote tier (at most 17.5), to each enemy commander
     }
 
     static void Add(WeaponDef d) {
@@ -229,9 +246,12 @@ public static class ClassDefs {
         new ClassDef { id = HeroClass.Lich, name = "Lich", tagline = "Death is only the beginning.",
             description = "An undying sorcerer-king and his summons: a diving gargoyle, a skeleton legion, a bone dragon and a giant bone hand that drags walls into the ground.",
             color = WeaponDefs.Hex("8FD45A") },
-        new ClassDef { id = HeroClass.Gambler, name = "Gambler", tagline = "Feeling lucky?",
+        new ClassDef { id = HeroClass.Gambler, name = "Lucky Guy", tagline = "Feeling lucky?",   // the Gambler in the code
             description = "Games of chance: loaded dice that raise the stakes, a deck of fate, a heads-or-tails coin and a roulette wheel.",
             color = WeaponDefs.Hex("F0509A") },
+        new ClassDef { id = HeroClass.Candidate, name = "Candidate", tagline = "Every vote counts.",
+            description = "A campaigner whose skills grow with his votes (won by every hit): a ballot stamp that calls down a giant stamp, a rally shout that shoves walls and echoes back as a shield, a campaign bus and a signature that silences the enemy.",
+            color = WeaponDefs.Hex("27B5C4") },
     };
 
     public static ClassDef Get(HeroClass c) { return all[(int)c]; }

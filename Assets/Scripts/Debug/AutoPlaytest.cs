@@ -102,6 +102,12 @@ public class AutoPlaytest : MonoBehaviour {
             Finish("done");
             yield break;
         }
+        if (Array.IndexOf(args, "-gambler") >= 0) {   // -gambler: just the Gambler's card and coin pickers, as a player sees them
+            yield return new WaitForSecondsRealtime(2f);
+            yield return GamblerChoices();
+            Finish("done");
+            yield break;
+        }
         bool quick = Array.IndexOf(args, "-quick") >= 0;
         int only = Array.IndexOf(args, "-only");
         if (only >= 0 && only + 1 < args.Length && int.TryParse(args[only + 1], out int c0)) {
@@ -114,6 +120,7 @@ public class AutoPlaytest : MonoBehaviour {
         for (int c = 0; c < Classes.Count; c += quick ? 2 : 1) yield return WeaponDuel(c);
         if (!quick) {
             yield return HumanTurn();
+            yield return GamblerChoices();
             yield return FullDuel();
             foreach (int level in new[] { 3, 7, 9 }) yield return CampaignLevel(level);
         }
@@ -178,6 +185,37 @@ public class AutoPlaytest : MonoBehaviour {
         yield return CaptureTurn(bm, "h");
     }
 
+    // The Gambler's questions before he aims, on a human turn: the fan of face-down cards, a card picked, the coins, and
+    // the chip with the card he holds.
+    IEnumerator GamblerChoices() {
+        GameSession.AutoPlay = false;
+        GameSession.PlayerClass = HeroClass.Gambler;
+        yield return LoadBattle(() => GameSession.StartCampaignLevel(0));
+        BattleManager bm = BattleManager.I;
+        yield return WaitFor(() => !Alive(bm) || (bm.State == BattleState.Aiming && bm.Human.Active != null), 30f);
+        GamblerChoiceUI ui = FindAnyObjectByType<GamblerChoiceUI>();
+        if (!Alive(bm) || bm.Human.Active == null || ui == null) { notes.Add("gambler pickers: no human turn or no picker UI"); GameSession.AutoPlay = true; yield break; }
+        Fortress me = bm.Human.Active;
+        bm.Human.SelectSlot(1);   // Deck of Fate
+        yield return new WaitForSecondsRealtime(1.2f);
+        yield return Shot("g1_card_fan");
+        ui.PickCard(2);
+        yield return new WaitForSecondsRealtime(1f);
+        yield return Shot("g2_card_picked");
+        bm.Human.SelectSlot(2);   // Heads or Tails
+        yield return new WaitForSecondsRealtime(0.8f);
+        yield return Shot("g3_coins");
+        ui.CallCoin(true);
+        yield return new WaitForSecondsRealtime(0.8f);
+        bm.Human.SelectSlot(1);   // back to the cards: the chip shows the one he holds
+        yield return new WaitForSecondsRealtime(0.8f);
+        yield return Shot("g4_held_card");
+        GamblerHand hand = GamblerHand.Of(me);
+        notes.Add("gambler pickers: holds " + (hand.HasCard ? hand.Card.Name : "no card") + ", called " + (hand.HasCall ? (hand.CallHeads ? "heads" : "tails") : "nothing") +
+                  ", aim " + (HumanShotController.ChoiceFor(me) == null ? "free" : "held"));
+        GameSession.AutoPlay = true;
+    }
+
     // A whole bot-vs-bot duel to the end, for the result screen and balance (turn count).
     IEnumerator FullDuel() {
         GameSession.AutoPlay = true;
@@ -232,12 +270,14 @@ public class AutoPlaytest : MonoBehaviour {
                 foreach (var variant in BenchVariants(def)) {
                     GamblerHand.ForcedCard = variant.card;
                     GamblerHand.ForcedFlip = variant.flip;
+                    CandidateVotes.ForcedTier = variant.tier;
                     yield return BenchWeapon(c, slot, def, variant.label, trials);
                 }
             }
         }
         GamblerHand.ForcedCard = -1;
         GamblerHand.ForcedFlip = -1;
+        CandidateVotes.ForcedTier = -1;
         benchSlot = -1;
         TimeFX.Speed = 1.4f;
     }
@@ -285,12 +325,16 @@ public class AutoPlaytest : MonoBehaviour {
     }
 
     // What one weapon is benched as: the Gambler's Deck of Fate once per kind of card (deck index: 0 = Two, 16 = Six, 32 = Ten,
-    // 36 Jack, 40 Queen, 44 King, 48 Ace, 52 Joker), his coin as a won call (a lost one does nothing); anything else once.
-    static List<(string label, int card, int flip)> BenchVariants(WeaponDef def) {
+    // 36 Jack, 40 Queen, 44 King, 48 Ace, 52 Joker), his coin as a won call (a lost one does nothing), the Candidate's
+    // weapons with no votes and with all of them; anything else once.
+    static List<(string label, int card, int flip, int tier)> BenchVariants(WeaponDef def) {
         if (def.id == WeaponId.DeckOfFate)
-            return new List<(string, int, int)> { ("2", 0, -1), ("6", 16, -1), ("10", 32, -1), ("J", 36, -1), ("Q", 40, -1), ("K", 44, -1), ("A", 48, -1), ("Joker", 52, -1) };
-        if (def.id == WeaponId.CoinToss) return new List<(string, int, int)> { ("won", -1, 1) };
-        return new List<(string, int, int)> { ("", -1, -1) };
+            return new List<(string, int, int, int)> { ("2", 0, -1, -1), ("6", 16, -1, -1), ("10", 32, -1, -1), ("J", 36, -1, -1), ("Q", 40, -1, -1),
+                                                       ("K", 44, -1, -1), ("A", 48, -1, -1), ("Joker", 52, -1, -1) };
+        if (def.id == WeaponId.CoinToss) return new List<(string, int, int, int)> { ("won", -1, 1, -1) };
+        if (def.heroClass == HeroClass.Candidate)
+            return new List<(string, int, int, int)> { ("0%", -1, -1, 0), ("100%", -1, -1, CandidateVotes.MaxTier) };
+        return new List<(string, int, int, int)> { ("", -1, -1, -1) };
     }
 
     // Full bot-vs-bot duels (both sides the same Hard bot, wind on, the arena changing) of each given class against

@@ -17,14 +17,14 @@ public class AlienSaucer : Projectile {
     const float HoverHeight = 6.5f;          // above the surface it stops over
     const float FocusDrop = 3f;              // the camera follows a point this far under the saucer: the beam
     const float GlideSpeed = 12f, MinGlide = 0.4f, MaxGlide = 1.4f;
-    const float BeamTime = 2.5f, Warmup = 0.35f;
+    const float BeamTime = 3.2f, Warmup = 0.35f;
     const float TopRadius = 0.6f, MaxLength = 20f;   // the cone widens from TopRadius to def.radius at its foot
-    const float BlockLift = 0.6f;            // share of gravity cancelled for the blocks in the cone
-    const float DebrisLift = 9f;             // m/s² upwards for debris, on top of cancelling gravity
+    const float BlockLift = 0.85f;           // share of gravity cancelled for the blocks in the cone
+    const float DebrisLift = 13f;            // m/s² upwards for debris, on top of cancelling gravity
     const float Centering = 3f, Drag = 1.5f;
     const float CommanderHang = 2.4f;        // a lifted commander hangs this far under the saucer
-    const float GrabEvery = 0.2f, GrabSpeed = 8f, GrabTimeout = 1.6f, Reach = 1.1f;
-    const int MaxAbductions = 3;
+    const float GrabEvery = 0.2f, GrabSpeed = 13f, GrabTimeout = 1.6f, Reach = 1.1f;
+    const int MaxAbductions = 5;
     const float TickEvery = 0.25f;
     const float LeaveTime = 0.9f;
 

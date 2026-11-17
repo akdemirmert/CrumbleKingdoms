@@ -1,12 +1,15 @@
 using UnityEngine;
 
 // The Soldier's fuse bomb (FuseBombProjectile): a bouncing iron bomb with a burning fuse. It blows up when the
-// fuse runs out or on a click (air burst), and fizzles out if it falls into the sea.
+// fuse runs out or on a click (air burst), and fizzles out if it falls into the sea. It bounces off the ground, but
+// not off an enemy wall or commander: there it thuds and drops at the wall's foot (instead of springing back into the
+// sea before the fuse is out). A bot "clicks" as soon as it hits the enemy.
 
 public class FuseBombProjectile : Projectile {
     const float FuseTime = 3.2f;
     const float Radius = 0.3f;
     const float Mass = 2f;
+    const float DeadBounce = 0.25f;          // share of its speed it keeps after hitting an enemy (none of it back towards us)
     static readonly Color BlinkColor = new Color(1f, 0.25f, 0.15f);
 
     Transform fuse, ember;
@@ -65,6 +68,13 @@ public class FuseBombProjectile : Projectile {
         SoldierWeapons.FirstContact(c, transform.position, out Vector3 point, out _);
         SoldierWeapons.LimitShove(c);
         if (!impacted) RaiseImpact(point);
+        if (c.collider.GetComponentInParent<IDamageable>() != null && !IsOwnTeam(c.collider)) {
+            if (!float.IsNaN(botActivateX)) { TryActivate(); return; }   // a bot sets it off right at the wall
+            Vector3 v = rb.linearVelocity;
+            if (v.x * travelDir < 0f) v.x = 0f;
+            rb.linearVelocity = v * DeadBounce;
+            rb.angularVelocity *= DeadBounce;
+        }
         float speed = c.relativeVelocity.magnitude;
         if (speed < 2.5f || Time.time < lastBounce + 0.12f) return;
         lastBounce = Time.time;

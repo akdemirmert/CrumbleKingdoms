@@ -94,8 +94,8 @@ public class BoneHand : MonoBehaviour {
     const float GripHalfWidth = 2.8f;            // it drags down what lies within this distance of its middle (x)
     const float GripAccel = 30f;                 // m/s² downwards at its middle, fading to 30 % at the edge
     const float InwardPull = 2.5f;               // m/s² per metre towards its middle: the walls fold in on themselves
-    const float BlockDps = 70f;                  // crushing damage to the blocks in its grip (at its middle): they give way
-    const float CommanderDps = 12f;              // to a commander in its grip, less through walls (Explosion.Cover)
+    const float BlockDps = 90f;                  // crushing damage to the blocks in its grip (at its middle): they give way
+    const float CommanderDps = 30f;              // to a commander in its grip, less through walls (Explosion.Cover)
     const float TickEvery = 0.25f;
 
     static readonly Collider[] buffer = new Collider[256];
